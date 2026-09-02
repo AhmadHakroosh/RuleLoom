@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "id": "badRules",
+  "rules": [
+    {
+      "id": "badRule",
+      "when": { "eq": [{ "literal": 1 }] }
+    }
+  ]
+}
