@@ -27,7 +27,7 @@ async function copyAgentFixture() {
 
 describe("agent definition validation", () => {
   it("accepts the repository agent definitions", () => {
-    expect(runAgentCheck()).toContain("Validated 13 agent definitions");
+    expect(runAgentCheck()).toContain("Validated 14 agent definitions");
   });
 
   it("rejects malformed agent frontmatter", async () => {

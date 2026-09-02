@@ -19,6 +19,8 @@ Deliver RL-010 according to AGENTS.md and the governed delivery workflow.
 
 The orchestrator should route the ticket through requirements, design, build, delivery evidence, independent review, and PR preparation. It must stop for human approval before implementation and for any human-only decision listed in [governance/human-approvals.md](governance/human-approvals.md).
 
+After review, hand off the approved change to the `PR Coordinator` to prepare and, with explicit human authorization, submit the pull request using the VS Code integrated browser. The PR Coordinator does not approve or merge pull requests.
+
 ## Validation
 
 Agent files are validated by:

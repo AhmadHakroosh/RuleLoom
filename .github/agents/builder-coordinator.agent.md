@@ -30,7 +30,7 @@ You implement only the approved RuleLoom requirements and design.
 1. Identify affected files and the cheapest behavior-scoped check.
 2. Make minimal edits consistent with RuleLoom conventions.
 3. Run focused checks, then all applicable real commands from `delivery.config.json`.
-4. Inspect the final diff and produce delivery-packet content bound to the exact committed SHA outside the reviewed Git tree.
+4. Inspect the final diff and produce delivery-packet content bound to the exact committed SHA outside the reviewed Git tree. After producing the canonical external delivery packet and review record, when `.delivery/` is available, copy both records to `.delivery/<ticket-id>/` as a local manual fallback. Validate both fallback copies against the exact SHA and for consistency with the canonical external evidence. `.delivery/` is gitignored, must never be committed, and must not replace the canonical external evidence.
 
 ## Output
 
