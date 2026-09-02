@@ -145,6 +145,23 @@ describe("internal safe JSON Pointer", () => {
     expect(invoked).toBe(false);
   });
 
+  it("returns an access failure when a descriptor trap throws", () => {
+    const root = new Proxy(
+      {},
+      {
+        getOwnPropertyDescriptor() {
+          throw new Error("trap failure");
+        },
+      },
+    );
+
+    expect(() => resolve("/value", root)).not.toThrow();
+    expect(resolve("/value", root)).toEqual({
+      ok: false,
+      code: "POINTER_ACCESS_FAILURE",
+    });
+  });
+
   it("uses canonical bounded array indexes and descriptor presence", () => {
     const values: unknown[] = [];
     values[0] = "zero";
@@ -205,8 +222,11 @@ describe("internal safe JSON Pointer", () => {
   });
 
   it("enforces default, custom, and hard limits during compilation", () => {
-    expect(compileJsonPointer(`${"/x".repeat(64)}`)).toBeTruthy();
-    expect(compileJsonPointer(`${"/x".repeat(65)}`)).toEqual({
+    const defaultLimitResult = compileJsonPointer(`${"/x".repeat(64)}`);
+    expect(defaultLimitResult.ok).toBe(true);
+    const exceededDefaultLimitResult = compileJsonPointer(`${"/x".repeat(65)}`);
+    expect(exceededDefaultLimitResult.ok).toBe(false);
+    expect(exceededDefaultLimitResult).toEqual({
       ok: false,
       code: "POINTER_DEPTH_EXCEEDED",
     });
@@ -214,7 +234,7 @@ describe("internal safe JSON Pointer", () => {
       ok: false,
       code: "POINTER_TOKEN_TOO_LONG",
     });
-    expect(compileJsonPointer("/abc", { maxDepth: 1 })).toEqual({
+    expect(compileJsonPointer("/abc/def", { maxDepth: 1 })).toEqual({
       ok: false,
       code: "POINTER_DEPTH_EXCEEDED",
     });
@@ -222,10 +242,12 @@ describe("internal safe JSON Pointer", () => {
       ok: false,
       code: "POINTER_TOKEN_TOO_LONG",
     });
-    expect(compileJsonPointer("/x", { maxDepth: 1024 })).toBeTruthy();
+    expect(compileJsonPointer("/x", { maxDepth: 1024 }).ok).toBe(true);
     expect(
-      compileJsonPointer(`/x${"a".repeat(65535)}`, { maxTokenLength: 65536 }),
-    ).toBeTruthy();
+      compileJsonPointer(`/x${"a".repeat(65535)}`, {
+        maxTokenLength: 65536,
+      }).ok,
+    ).toBe(true);
     expect(() => compileJsonPointer("/x", { maxDepth: 1025 })).toThrow(
       RangeError,
     );

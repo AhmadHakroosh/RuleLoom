@@ -8,6 +8,7 @@ export const POINTER_DIAGNOSTIC_CODES = [
   "POINTER_MISSING_SEGMENT",
   "POINTER_SCALAR_TRAVERSAL",
   "POINTER_ACCESSOR_PROPERTY",
+  "POINTER_ACCESS_FAILURE",
 ] as const;
 
 export type PointerDiagnosticCode = (typeof POINTER_DIAGNOSTIC_CODES)[number];
@@ -76,7 +77,7 @@ function failure(code: PointerDiagnosticCode): PointerFailure {
 }
 
 function countTokens(pointer: string, maxDepth: number) {
-  let depth = 1;
+  let depth = 0;
   for (const character of pointer) {
     if (character === "/") {
       depth += 1;
@@ -191,7 +192,12 @@ export function resolveJsonPointer(
     if (Array.isArray(current) && !isCanonicalArrayIndex(token)) {
       return failure("POINTER_INVALID_ARRAY_INDEX");
     }
-    const descriptor = Object.getOwnPropertyDescriptor(current, token);
+    let descriptor: PropertyDescriptor | undefined;
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(current, token);
+    } catch {
+      return failure("POINTER_ACCESS_FAILURE");
+    }
     if (descriptor === undefined) {
       return failure("POINTER_MISSING_SEGMENT");
     }

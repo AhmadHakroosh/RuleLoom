@@ -88,7 +88,7 @@ Inherited properties are never considered present. Presence MUST be determined b
 
 For an object-like current value, traversal examines the next decoded token as an own property descriptor. A data descriptor is readable and yields its `value`. A missing descriptor produces `POINTER_MISSING_SEGMENT`. The resolver MUST NOT invoke ordinary property access, `hasOwnProperty` methods supplied by the input, or any inherited behavior.
 
-The implementation MUST use `Object.getOwnPropertyDescriptor` for this decision. Proxy behavior is outside the portable data model; if the host exposes a proxy, the implementation MUST treat any trap-induced exception as an access failure rather than retrying through another access path.
+The implementation MUST use `Object.getOwnPropertyDescriptor` for this decision. Proxy behavior is outside the portable data model; if the host exposes a proxy, the implementation MUST treat any trap-induced exception as `POINTER_ACCESS_FAILURE` rather than retrying through another access path.
 
 ### Getter/setter properties
 
@@ -159,6 +159,7 @@ The stable codes are:
 - `POINTER_MISSING_SEGMENT`: Required own data property or array element is absent.
 - `POINTER_SCALAR_TRAVERSAL`: A segment remains after traversal reaches a scalar.
 - `POINTER_ACCESSOR_PROPERTY`: The selected own property is an accessor descriptor.
+- `POINTER_ACCESS_FAILURE`: Descriptor access failed, including an exception from a proxy `getOwnPropertyDescriptor` trap.
 
 Error messages, token positions, and internal metadata may evolve, but these codes MUST remain stable. Expected outcomes MUST NOT contain the original object, accessor function, secret value, or a full pointer when that could disclose sensitive path data.
 
@@ -174,7 +175,7 @@ The primary threat model is untrusted rule input and untrusted data presented to
 
 Bounded depth, token length, and array-index parsing reduce resource-exhaustion opportunities from pathological pointers. Numeric parsing MUST avoid precision loss when deciding whether an index exceeds `2^32 - 2`; length and lexical checks may reject values before conversion.
 
-Pointer failures MUST avoid logging resolved values or automatically copying input data into diagnostics. Callers are responsible for applying their own data-classification policy to pointer strings, because paths themselves can contain sensitive names. Security regression tests MUST verify that `__proto__`, `prototype`, and `constructor` are rejected in plain and escaped forms, accessors are not invoked, inherited properties are ignored, and no mutation occurs.
+Pointer failures MUST avoid logging resolved values or automatically copying input data into diagnostics. Callers are responsible for applying their own data-classification policy to pointer strings, because paths themselves can contain sensitive names. Security regression tests MUST verify that `__proto__`, `prototype`, and `constructor` are rejected in plain and escaped forms, accessors are not invoked, descriptor access exceptions return `POINTER_ACCESS_FAILURE` without exposing error or value details, inherited properties are ignored, and no mutation occurs.
 
 ## 14 Migration/deprecation
 
@@ -207,6 +208,7 @@ Tests MUST cover:
 - Present own `undefined` versus a missing own segment.
 - Own data descriptors, inherited properties, and properties shadowed by input-provided methods.
 - Getters and setters that would fail the test if invoked, returning `POINTER_ACCESSOR_PROPERTY` without invocation.
+- A proxy descriptor trap that throws, returning `POINTER_ACCESS_FAILURE` without throwing or exposing error details.
 - Plain and escaped unsafe tokens: `__proto__`, `prototype`, and `constructor`.
 - Canonical array indexes, leading zeros, `-`, `2^32 - 2`, `2^32 - 1`, and very large numeric tokens.
 - Sparse arrays, holes, inherited numeric properties, and own `undefined` elements.
