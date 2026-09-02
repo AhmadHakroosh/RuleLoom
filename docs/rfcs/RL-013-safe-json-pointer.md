@@ -229,7 +229,7 @@ This RFC changes a security boundary and defines runtime-visible internal semant
 - Approved by: Ahmad Hakroosh
 - Approver role: human owner
 - Date: September 02, 2026
-- Reference: RL-013
+- Reference: docs/rfcs/RL-013-safe-json-pointer.md (SHA-256: 69078fdcb5d782b32b8026a3e8274a7639dfa415f5f0af6b315274b0e86f4b56)
 
 ## 20 Decision summary
 
