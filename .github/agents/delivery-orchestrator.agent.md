@@ -10,6 +10,7 @@ agents:
     "Builder Coordinator",
     "Independent Reviewer",
     "CI Investigator",
+    "PR Coordinator",
   ]
 ---
 
