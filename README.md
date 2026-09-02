@@ -47,6 +47,12 @@ Markdown linting also validates local documentation links:
 npx pnpm@11.25.0 run lint:docs
 ```
 
+Validate repository-local agent definitions:
+
+```sh
+npx pnpm@11.25.0 run lint:agents
+```
+
 Type-check all package source and public declaration output:
 
 ```sh
@@ -122,6 +128,8 @@ Each package exposes only its root entry point through package `exports`. Import
 GitHub Actions runs the same local commands on pull requests and on the default branch. Required branch protection should require these checks before merge:
 
 - `install`
+- `contracts`
+- `project-checks`
 - `format`
 - `lint`
 - `typecheck`
@@ -148,6 +156,7 @@ Secret scan suppressions are not configured by default. Any future suppression i
 - [CONTRIBUTING.md](CONTRIBUTING.md): contribution workflow, ticket selection, checks, and review expectations.
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): conduct expectations and escalation path.
 - [SECURITY.md](SECURITY.md): private vulnerability reporting and disclosure process.
+- [docs/agents.md](docs/agents.md): repository-local delivery agent usage and rationale.
 - [docs/governance/rfc-process.md](docs/governance/rfc-process.md): RFC requirements for semantic and public API changes.
 - [docs/governance/versioning-and-deprecation.md](docs/governance/versioning-and-deprecation.md): compatibility, semantic-versioning, and deprecation policy.
 - [docs/governance/human-approvals.md](docs/governance/human-approvals.md): human-only decision categories.

@@ -29,6 +29,8 @@ Follow [docs/delivery-workflow.md](docs/delivery-workflow.md) for requirements, 
 
 Human approval is required before implementation proceeds beyond approved requirements and design. Delivery packets and review records must identify the exact commit they describe and remain outside the reviewed Git tree.
 
+RuleLoom's VS Code delivery agents are documented in [docs/agents.md](docs/agents.md). Use the Delivery Orchestrator with one story ticket at a time, such as `RL-010`.
+
 ## Review expectations
 
 Every pull request should explain:
@@ -54,6 +56,8 @@ npx pnpm@11.25.0 run test:integration
 ```
 
 Documentation-only changes still need Markdown linting and link validation through `npx pnpm@11.25.0 run lint:docs`.
+
+Agent-definition changes also need `npx pnpm@11.25.0 run lint:agents`.
 
 ## Public semantics
 
