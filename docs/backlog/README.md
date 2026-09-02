@@ -15,7 +15,7 @@ Story `Functional requirements` are the task list. An agent should receive one s
 
 | Sequence | Epic                                               | Outcome                                          | Stories       |
 | -------: | -------------------------------------------------- | ------------------------------------------------ | ------------- |
-|        1 | [RL-E01](epics/RL-E01-foundation.md)               | Governed TypeScript repository                   | RL-001–RL-004 |
+|        1 | [RL-E01](epics/RL-E01-foundation.md)               | Governed TypeScript repository                   | RL-001–RL-005 |
 |        2 | [RL-E02](epics/RL-E02-language-schema.md)          | Versioned language and conformance contract      | RL-010–RL-013 |
 |        3 | [RL-E03](epics/RL-E03-compiler.md)                 | Validated JSON compiled to immutable plans       | RL-020–RL-023 |
 |        4 | [RL-E04](epics/RL-E04-runtime.md)                  | Deterministic sync and async evaluation          | RL-030–RL-035 |
@@ -27,7 +27,7 @@ Story `Functional requirements` are the task list. An agent should receive one s
 
 | Milestone                 | Included tickets | Exit condition                                                                |
 | ------------------------- | ---------------- | ----------------------------------------------------------------------------- |
-| M0 — Repository ready     | RL-001–RL-004    | Agentic delivery and real CI checks work on the repository.                   |
+| M0 — Repository ready     | RL-001–RL-005    | Agentic delivery and real CI checks work on the repository.                   |
 | M1 — Language contract    | RL-010–RL-013    | Schema, semantics, safe paths, and conformance fixtures are versioned.        |
 | M2 — Executable core      | RL-020–RL-035    | Valid rules compile and evaluate deterministically with sync and async facts. |
 | M3 — Developer experience | RL-040–RL-043    | Rules can be authored, explained, tested, and operated from the CLI.          |
@@ -42,6 +42,7 @@ Story `Functional requirements` are the task list. An agent should receive one s
 | RL-002 | RL-001                         | Quality gates and CI                    |
 | RL-003 | RL-001, RL-002                 | Agentic delivery integration            |
 | RL-004 | RL-001                         | Governance and contribution policy      |
+| RL-005 | RL-003, RL-004                 | Repository-local delivery agents        |
 | RL-010 | RL-001, RL-004                 | Language semantics specification        |
 | RL-011 | RL-010                         | Canonical AST and JSON Schema           |
 | RL-012 | RL-010, RL-011                 | Conformance corpus                      |

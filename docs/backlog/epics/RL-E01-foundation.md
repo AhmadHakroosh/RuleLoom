@@ -18,6 +18,7 @@ Create a governed TypeScript repository in which agents and humans can deliver R
 2. Complete RL-002 to install local and protected CI quality gates.
 3. Complete RL-003 to integrate the Agentic Engineering System delivery contracts.
 4. Complete RL-004 to document governance, security reporting, and contribution rules.
+5. Complete RL-005 to add repository-local governed delivery agent definitions.
 
 ## Quality requirements
 
@@ -33,6 +34,6 @@ Create a governed TypeScript repository in which agents and humans can deliver R
 
 ## Acceptance criteria
 
-- RL-001 through RL-004 are complete with accepted delivery evidence.
+- RL-001 through RL-005 are complete with accepted delivery evidence.
 - A fresh clone can install, check, test, and build using documented commands.
 - Protected CI and the Agentic delivery workflow agree on the required checks.
