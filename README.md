@@ -59,6 +59,12 @@ Validate the language semantics specification and conformance fixture references
 npx pnpm@11.25.0 run check:language-semantics
 ```
 
+Validate schema/type drift anchors:
+
+```sh
+npx pnpm@11.25.0 run check:schema
+```
+
 Type-check all package source and public declaration output:
 
 ```sh

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0",
+  "id": "checkoutRules",
+  "metadata": {
+    "owner": "risk",
+    "tags": ["checkout", "v1"]
+  },
+  "parameters": {
+    "minimumAge": 18,
+    "allowedCountries": ["CA", "US"]
+  },
+  "rules": [
+    {
+      "id": "approveAdultCustomer",
+      "when": {
+        "all": [
+          {
+            "gte": [
+              { "fact": "customer", "path": "/age" },
+              { "parameter": "minimumAge" }
+            ]
+          },
+          {
+            "in": [
+              { "fact": "customer", "path": "/country" },
+              { "parameter": "allowedCountries" }
+            ]
+          },
+          { "not": { "local": "isBlocked" } },
+          {
+            "extension": "example.optional",
+            "required": false,
+            "args": [{ "literal": true }]
+          }
+        ]
+      },
+      "actions": [
+        {
+          "type": "approve",
+          "payload": { "queue": "standard" },
+          "metadata": { "priority": 1 }
+        }
+      ],
+      "metadata": { "source": "RL-011" }
+    },
+    { "id": "captureLiteral", "when": { "literal": true } },
+    {
+      "id": "compareNumber",
+      "when": { "lt": [{ "literal": 1 }, { "literal": 2 }] }
+    },
+    {
+      "id": "compareNumberLte",
+      "when": { "lte": [{ "literal": 2 }, { "literal": 2 }] }
+    },
+    {
+      "id": "compareNumberGt",
+      "when": { "gt": [{ "literal": 3 }, { "literal": 2 }] }
+    },
+    {
+      "id": "matchAny",
+      "when": { "any": [{ "literal": false }, { "literal": true }] }
+    },
+    {
+      "id": "compareEqual",
+      "when": { "eq": [{ "literal": "gold" }, { "literal": "gold" }] }
+    }
+  ]
+}
