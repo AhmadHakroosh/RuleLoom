@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0",
+  "ticket": {
+    "provider": "ruleloom",
+    "id": "RL-003",
+    "url": "https://example.invalid/tickets/RL-003"
+  },
+  "objective": "Integrate the Agentic Engineering System delivery workflow into RuleLoom.",
+  "scope": {
+    "in": [
+      "repository governance",
+      "delivery contracts",
+      "local validation checks"
+    ],
+    "out": ["manual PR automation", "production deployment"]
+  },
+  "requirements": [
+    {
+      "id": "REQ-01",
+      "kind": "functional",
+      "statement": "Add the approved contracts to the repository through a traceable strategy.",
+      "source": "RL-003 FR1"
+    },
+    {
+      "id": "REQ-02",
+      "kind": "functional",
+      "statement": "Configure real project checks in delivery.config.json using the quality-gate commands.",
+      "source": "RL-003 FR2"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "id": "AC-01",
+      "given": "a manual RuleLoom ticket",
+      "when": "the intake and requirements workflow is executed",
+      "then": "it can produce valid requirements and design contracts",
+      "requirementIds": ["REQ-01", "REQ-02"]
+    }
+  ],
+  "ambiguities": []
+}

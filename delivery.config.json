@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "commands": {
+    "formatCheck": "npx pnpm@11.25.0 run format:check",
+    "lint": "npx pnpm@11.25.0 run lint",
+    "typecheck": "npx pnpm@11.25.0 run typecheck",
+    "unitTest": "npx pnpm@11.25.0 run test:unit",
+    "integrationTest": "npx pnpm@11.25.0 run test:integration",
+    "build": "npx pnpm@11.25.0 run build",
+    "securityScan": "npx pnpm@11.25.0 run security:deps && npx pnpm@11.25.0 run security:secrets"
+  },
+  "release": {
+    "artifactPath": "packages/*/dist",
+    "stagingEnvironment": "staging",
+    "productionEnvironment": "production",
+    "requireImmutableDigest": true,
+    "rebuildOnPromotion": false
+  }
+}

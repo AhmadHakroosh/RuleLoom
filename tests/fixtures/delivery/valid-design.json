@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "requirementsRef": "requirements:RL-003",
+  "summary": "Add the approved governance contracts and validation scripts without widening the story scope.",
+  "decisions": [
+    {
+      "decision": "Vendored schema copies in the repository are the minimal, reversible solution.",
+      "rationale": "This satisfies the requirement to add the approved schemas while keeping the story narrow and deterministic.",
+      "alternatives": [
+        "Generated sync from an external source",
+        "Using a local non-versioned generated folder"
+      ]
+    }
+  ],
+  "affectedComponents": [
+    "contracts",
+    "scripts",
+    "docs",
+    "delivery.config.json"
+  ],
+  "interfaces": [
+    "delivery.config.json validation",
+    "contract validation script"
+  ],
+  "risks": [
+    {
+      "description": "Schema drift between upstream and vendored copies",
+      "likelihood": "medium",
+      "impact": "medium",
+      "mitigation": "Review the source schema before updates and keep the vendored copy synchronized intentionally."
+    }
+  ],
+  "testStrategy": [
+    "Validate repository config against the real commands",
+    "Validate representative valid and invalid contract fixtures"
+  ],
+  "rollout": "Manual repository change with local validation before review.",
+  "rollback": "Remove the added schema files, validation scripts, and delivery config while preserving the rest of the repo.",
+  "humanApprovals": ["requirements approval", "design approval"]
+}

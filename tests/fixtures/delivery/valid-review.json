@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0",
+  "reviewedHeadSha": "89abcdef0123456789abcdef0123456789abcdef",
+  "reviewers": ["correctness", "security", "reliability"],
+  "verdict": "approve",
+  "findings": [],
+  "testGaps": [],
+  "residualRisks": [
+    "Future upstream contract changes require validation before adoption."
+  ]
+}

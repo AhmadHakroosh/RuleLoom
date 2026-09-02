@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/design.schema.json",
+  "title": "Implementation Design",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "requirementsRef",
+    "summary",
+    "decisions",
+    "affectedComponents",
+    "risks",
+    "testStrategy",
+    "rollout",
+    "rollback",
+    "humanApprovals"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "requirementsRef": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/decision" }
+    },
+    "affectedComponents": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "interfaces": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "dataChanges": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "risks": { "type": "array", "items": { "$ref": "#/$defs/risk" } },
+    "testStrategy": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "observability": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "rollout": { "type": "string", "minLength": 1 },
+    "rollback": { "type": "string", "minLength": 1 },
+    "humanApprovals": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "rationale", "alternatives"],
+      "properties": {
+        "decision": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "alternatives": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "likelihood", "impact", "mitigation"],
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "likelihood": { "enum": ["low", "medium", "high"] },
+        "impact": { "enum": ["low", "medium", "high", "critical"] },
+        "mitigation": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

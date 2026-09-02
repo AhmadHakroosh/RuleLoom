@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/review.schema.json",
+  "title": "Independent Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "reviewedHeadSha",
+    "reviewers",
+    "verdict",
+    "findings",
+    "testGaps",
+    "residualRisks"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "reviewedHeadSha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "reviewers": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": { "enum": ["correctness", "security", "reliability"] }
+    },
+    "verdict": { "enum": ["approve", "request-changes"] },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "testGaps": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "residualRisks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "domain",
+        "severity",
+        "blocking",
+        "location",
+        "evidence",
+        "impact",
+        "remediation"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^F-[0-9]+$" },
+        "domain": {
+          "enum": ["correctness", "security", "reliability", "maintainability"]
+        },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "blocking": { "type": "boolean" },
+        "location": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 },
+        "remediation": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

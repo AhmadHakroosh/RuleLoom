@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0",
+  "ticketId": "RL-003",
+  "baseSha": "0123456789abcdef0123456789abcdef01234567",
+  "headSha": "89abcdef0123456789abcdef0123456789abcdef",
+  "requirementsRef": "requirements:RL-003",
+  "designRef": "design:RL-003",
+  "changeSummary": "Adds the approved governance contracts and validation scripts for RL-003.",
+  "filesChanged": [
+    "delivery.config.json",
+    "contracts/schemas/requirements.schema.json",
+    "scripts/check-delivery-config.mjs"
+  ],
+  "acceptanceEvidence": [
+    {
+      "criterionId": "AC-01",
+      "evidence": "Local validation succeeded for the required RuleLoom delivery checks."
+    }
+  ],
+  "checks": [
+    {
+      "name": "delivery-config",
+      "command": "node scripts/check-delivery-config.mjs",
+      "status": "passed",
+      "details": "Validated the repository delivery config and guard rails."
+    }
+  ],
+  "residualRisks": ["Schema drift requires explicit future synchronization."]
+}
