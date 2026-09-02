@@ -1,0 +1,17 @@
+{
+  "name": "@ruleloom/runtime",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "sideEffects": false,
+  "files": ["dist/index.js", "dist/index.js.map", "dist/index.d.ts", "dist/index.d.ts.map"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@ruleloom/core": "workspace:*"
+  }
+}

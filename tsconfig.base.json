@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "skipLibCheck": false,
+    "paths": {
+      "@ruleloom/core": ["./packages/core/src/index.ts"],
+      "@ruleloom/schema": ["./packages/schema/src/index.ts"],
+      "@ruleloom/compiler": ["./packages/compiler/src/index.ts"],
+      "@ruleloom/runtime": ["./packages/runtime/src/index.ts"]
+    }
+  }
+}
