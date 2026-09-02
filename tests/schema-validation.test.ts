@@ -145,13 +145,18 @@ describe("RuleLoom schema validation", () => {
     const conformance = await readJson(
       "tests/fixtures/conformance/language-semantics-v1.json",
     );
-    const expressionExamples = conformance.examples.filter(
-      (example: { expression?: unknown }) => example.expression !== undefined,
+    const expressionExamples = conformance.fixtures.filter(
+      (example: {
+        normativeRefs?: unknown[];
+        sourceDocument?: { expression?: unknown };
+      }) =>
+        example.normativeRefs?.length &&
+        example.sourceDocument?.expression !== undefined,
     );
 
     for (const example of expressionExamples) {
       const result = validateRuleSetDocument(
-        wrapExpression(example.id, example.expression),
+        wrapExpression(example.id, example.sourceDocument.expression),
       );
       expect(result.diagnostics, example.id).toEqual([]);
       expect(result.valid, example.id).toBe(true);
@@ -162,13 +167,18 @@ describe("RuleLoom schema validation", () => {
     const conformance = await readJson(
       "tests/fixtures/conformance/language-semantics-v1.json",
     );
-    const ruleSetExamples = conformance.examples.filter(
-      (example: { ruleSet?: unknown }) => example.ruleSet !== undefined,
+    const ruleSetExamples = conformance.fixtures.filter(
+      (example: {
+        normativeRefs?: unknown[];
+        sourceDocument?: { ruleSet?: unknown };
+      }) =>
+        example.normativeRefs?.length &&
+        example.sourceDocument?.ruleSet !== undefined,
     );
 
     for (const example of ruleSetExamples) {
       const result = validateRuleSetDocument(
-        wrapRuleSetExample(example.id, example.ruleSet),
+        wrapRuleSetExample(example.id, example.sourceDocument.ruleSet),
       );
       expect(result.diagnostics, example.id).toEqual([]);
       expect(result.valid, example.id).toBe(true);

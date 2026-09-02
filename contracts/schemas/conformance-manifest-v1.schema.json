@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ruleloom.dev/contracts/conformance-manifest-v1.schema.json",
+  "title": "RuleLoom v1 Conformance Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifestVersion",
+    "languageVersion",
+    "normativeRefs",
+    "registryContract",
+    "fixtures"
+  ],
+  "properties": {
+    "manifestVersion": { "const": "1.0.0" },
+    "languageVersion": { "const": "1.0" },
+    "normativeRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/normativeRef" }
+    },
+    "registryContract": { "$ref": "#/$defs/registryContract" },
+    "fixtures": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/fixture" }
+    }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]{2,127}$" },
+    "jsonValue": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        { "type": "array", "items": { "$ref": "#/$defs/jsonValue" } },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": { "enum": ["__proto__", "constructor", "prototype"] }
+          },
+          "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+        }
+      ]
+    },
+    "expression": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/jsonValue" }
+    },
+    "normativeRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "clause", "fixtureIds"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^RL-010-[A-Z0-9-]+$" },
+        "clause": { "type": "string", "minLength": 1 },
+        "fixtureIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/identifier" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "registryContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operators", "extensions"],
+      "properties": {
+        "operators": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "extensions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^RL_[A-Z0-9_]+$" },
+        "path": { "type": "string", "pattern": "^(?:$|/(?:[^/~]|~0|~1)*)*$" },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "message": { "type": "string" }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome"],
+      "properties": {
+        "outcome": {
+          "enum": ["matched", "notMatched", "indeterminate", "error"]
+        },
+        "state": { "type": "string", "minLength": 1 },
+        "value": { "$ref": "#/$defs/jsonValue" },
+        "results": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      }
+    },
+    "fixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "category",
+        "support",
+        "sourceDocument",
+        "input",
+        "expected"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/identifier" },
+        "category": { "type": "string", "minLength": 1 },
+        "support": {
+          "type": "array",
+          "items": { "enum": ["schema", "compile", "evaluate"] },
+          "uniqueItems": true
+        },
+        "sourceDocument": { "$ref": "#/$defs/jsonValue" },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["facts", "parameters"],
+          "properties": {
+            "facts": { "$ref": "#/$defs/jsonValue" },
+            "parameters": { "$ref": "#/$defs/jsonValue" }
+          }
+        },
+        "expected": { "$ref": "#/$defs/expected" },
+        "traceAssertions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonValue" }
+        },
+        "normativeRefs": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^RL-010-[A-Z0-9-]+$" },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

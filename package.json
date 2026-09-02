@@ -30,7 +30,8 @@
     "security:deps": "pnpm audit --audit-level high && node scripts/check-pinned-dependencies.mjs",
     "security:secrets": "secretlint \"**/*.{ts,js,mjs,json,yml,yaml,md}\"",
     "check:gate-failures": "node scripts/check-gate-failures.mjs",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:integration && pnpm run metadata:check && pnpm run check:delivery && pnpm run check:language-semantics && pnpm run check:schema && pnpm run security:deps && pnpm run security:secrets && pnpm run check:gate-failures",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:integration && pnpm run metadata:check && pnpm run check:delivery && pnpm run check:conformance && pnpm run check:language-semantics && pnpm run check:schema && pnpm run security:deps && pnpm run security:secrets && pnpm run check:gate-failures",
+    "check:conformance": "node scripts/check-conformance.mjs",
     "check:schema": "pnpm run build && node scripts/check-schema-drift.mjs"
   },
   "devDependencies": {
