@@ -3,4 +3,3 @@ coverage/
 reports/
 .tmp/
 packages/*/dist/
-*.tsbuildinfo

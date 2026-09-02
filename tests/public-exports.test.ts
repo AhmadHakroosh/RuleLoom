@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { compilerCoreDependency, compilerPackageName, compilerSchemaDependency } from "@ruleloom/compiler";
+import {
+  compilerCoreDependency,
+  compilerPackageName,
+  compilerSchemaDependency,
+} from "@ruleloom/compiler";
 import { corePackageName } from "@ruleloom/core";
 import { runtimeCoreDependency, runtimePackageName } from "@ruleloom/runtime";
 import { schemaCoreDependency, schemaPackageName } from "@ruleloom/schema";

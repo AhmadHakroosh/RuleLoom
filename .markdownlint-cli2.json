@@ -1,0 +1,4 @@
+{
+  "globs": ["README.md", "docs/**/*.md"],
+  "ignores": ["node_modules", "coverage", "reports", "packages/*/dist"]
+}

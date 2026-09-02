@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 const packages = ["core", "schema", "compiler", "runtime"];
 const requiredArtifacts = packages.flatMap((packageName) => [
   `packages/${packageName}/dist/index.js`,
-  `packages/${packageName}/dist/index.d.ts`
+  `packages/${packageName}/dist/index.d.ts`,
 ]);
 
 const missingArtifacts = [];
@@ -33,7 +33,7 @@ const trackedGeneratedFiles = trackedFiles.filter(
     trackedFile === "node_modules" ||
     trackedFile.startsWith("node_modules/") ||
     trackedFile.includes("/node_modules/") ||
-    trackedFile.includes("/dist/")
+    trackedFile.includes("/dist/"),
 );
 
 if (trackedGeneratedFiles.length > 0) {

@@ -23,6 +23,24 @@ Install from the lockfile without modifying it:
 npx pnpm@11.25.0 install --frozen-lockfile
 ```
 
+Run all local quality gates:
+
+```sh
+npx pnpm@11.25.0 run check
+```
+
+Check deterministic formatting for TypeScript, JavaScript, JSON, Markdown, and YAML files:
+
+```sh
+npx pnpm@11.25.0 run format:check
+```
+
+Run lint checks for TypeScript, scripts, Markdown, JSON, and YAML:
+
+```sh
+npx pnpm@11.25.0 run lint
+```
+
 Type-check all package source and public declaration output:
 
 ```sh
@@ -35,6 +53,18 @@ Run automated tests:
 npx pnpm@11.25.0 run test
 ```
 
+Run unit tests with coverage and machine-readable reports:
+
+```sh
+npx pnpm@11.25.0 run test:unit
+```
+
+Run integration/package-boundary checks:
+
+```sh
+npx pnpm@11.25.0 run test:integration
+```
+
 Build package-local JavaScript and declaration artifacts:
 
 ```sh
@@ -45,6 +75,25 @@ Verify generated artifacts are present and not tracked:
 
 ```sh
 npx pnpm@11.25.0 run check:artifacts
+```
+
+Validate package metadata:
+
+```sh
+npx pnpm@11.25.0 run metadata:check
+```
+
+Run dependency and secret checks:
+
+```sh
+npx pnpm@11.25.0 run security:deps
+npx pnpm@11.25.0 run security:secrets
+```
+
+Prove representative quality gates fail on invalid input:
+
+```sh
+npx pnpm@11.25.0 run check:gate-failures
 ```
 
 Remove generated package output:
@@ -61,3 +110,29 @@ npx pnpm@11.25.0 run clean
 - `@ruleloom/runtime`: runtime package boundary.
 
 Each package exposes only its root entry point through package `exports`. Imports through unpublished internal paths are rejected by the configured boundary test.
+
+## Pull Request Checks
+
+GitHub Actions runs the same local commands on pull requests and on the default branch. Required branch protection should require these checks before merge:
+
+- `install`
+- `format`
+- `lint`
+- `typecheck`
+- `unit-test`
+- `integration-test`
+- `build`
+- `metadata`
+- `dependency-security`
+- `secret-scan`
+- `gate-failure-fixtures`
+
+The workflow grants read-only repository contents permissions by default. The dependency review job grants pull request read permissions only for pull request events. Third-party actions are pinned to immutable commit SHAs.
+
+CI caches the pnpm store keyed by `pnpm-lock.yaml`. It does not cache `dist/`, `coverage/`, `reports/`, or delivery evidence.
+
+Test reports are uploaded from `reports/test-results/` and coverage reports from `coverage/` with `if: always()` so they remain available when tests fail.
+
+Dependency suppressions are not configured by default. Any future suppression must document a reason, owner, and review date next to the suppression rule.
+
+Secret scan suppressions are not configured by default. Any future suppression in `.secretlintignore` or scanner configuration must include a reason, owner, and review date in the same change.

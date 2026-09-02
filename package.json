@@ -8,21 +8,41 @@
   },
   "scripts": {
     "install:clean": "pnpm install --frozen-lockfile",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "pnpm run lint:ts && pnpm run lint:docs && pnpm run lint:data",
+    "lint:ts": "oxlint packages tests scripts --deny-warnings",
+    "lint:docs": "markdownlint-cli2 \"README.md\" \"docs/**/*.md\"",
+    "lint:data": "node scripts/check-structured-files.mjs package.json packages/core/package.json packages/schema/package.json packages/compiler/package.json packages/runtime/package.json pnpm-workspace.yaml .github/workflows/quality.yml .markdownlint-cli2.json .oxlintrc.json .secretlintrc.json tests/fixtures/internal-import/tsconfig.json",
     "typecheck": "tsc -b --pretty false",
-    "test": "pnpm run build && vitest run",
+    "test": "pnpm run test:unit",
+    "test:unit": "pnpm run build && vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=reports/test-results/unit.xml",
+    "test:integration": "pnpm run build && pnpm run check:artifacts && node scripts/check-package-contents.mjs",
     "build": "tsc -b --pretty false",
     "clean": "tsc -b --clean && node scripts/clean.mjs",
-    "check:artifacts": "node scripts/check-artifacts.mjs"
+    "check:artifacts": "node scripts/check-artifacts.mjs",
+    "metadata:check": "node scripts/check-package-metadata.mjs",
+    "security:deps": "pnpm audit --audit-level high && node scripts/check-pinned-dependencies.mjs",
+    "security:secrets": "secretlint \"**/*.{ts,js,mjs,json,yml,yaml,md}\"",
+    "check:gate-failures": "node scripts/check-gate-failures.mjs",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:integration && pnpm run metadata:check && pnpm run security:deps && pnpm run security:secrets && pnpm run check:gate-failures"
   },
   "devDependencies": {
     "@ruleloom/compiler": "workspace:*",
     "@ruleloom/core": "workspace:*",
     "@ruleloom/runtime": "workspace:*",
     "@ruleloom/schema": "workspace:*",
+    "@secretlint/secretlint-rule-pattern": "13.0.5",
+    "@secretlint/secretlint-rule-preset-recommend": "13.0.5",
     "@types/node": "26.4.1",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "10.9.1",
+    "markdownlint-cli2": "0.23.2",
+    "oxlint": "1.81.0",
     "prettier": "3.9.6",
+    "secretlint": "13.0.5",
     "typescript": "7.0.2",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "yaml": "2.9.0"
   }
 }

@@ -4,7 +4,20 @@
   "type": "module",
   "license": "Apache-2.0",
   "sideEffects": false,
-  "files": ["dist/index.js", "dist/index.js.map", "dist/index.d.ts", "dist/index.d.ts.map"],
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/AhmadHakroosh/RuleLoom.git",
+    "directory": "packages/runtime"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.js.map",
+    "dist/index.d.ts",
+    "dist/index.d.ts.map"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
