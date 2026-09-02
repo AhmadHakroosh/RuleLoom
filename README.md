@@ -41,6 +41,12 @@ Run lint checks for TypeScript, scripts, Markdown, JSON, and YAML:
 npx pnpm@11.25.0 run lint
 ```
 
+Markdown linting also validates local documentation links:
+
+```sh
+npx pnpm@11.25.0 run lint:docs
+```
+
 Type-check all package source and public declaration output:
 
 ```sh
@@ -136,3 +142,13 @@ Test reports are uploaded from `reports/test-results/` and coverage reports from
 Dependency suppressions are not configured by default. Any future suppression must document a reason, owner, and review date next to the suppression rule.
 
 Secret scan suppressions are not configured by default. Any future suppression in `.secretlintignore` or scanner configuration must include a reason, owner, and review date in the same change.
+
+## Governance
+
+- [CONTRIBUTING.md](CONTRIBUTING.md): contribution workflow, ticket selection, checks, and review expectations.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): conduct expectations and escalation path.
+- [SECURITY.md](SECURITY.md): private vulnerability reporting and disclosure process.
+- [docs/governance/rfc-process.md](docs/governance/rfc-process.md): RFC requirements for semantic and public API changes.
+- [docs/governance/versioning-and-deprecation.md](docs/governance/versioning-and-deprecation.md): compatibility, semantic-versioning, and deprecation policy.
+- [docs/governance/human-approvals.md](docs/governance/human-approvals.md): human-only decision categories.
+- [docs/governance/ownership.md](docs/governance/ownership.md): review ownership guidance by path.

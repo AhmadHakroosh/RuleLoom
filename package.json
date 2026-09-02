@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "lint": "pnpm run lint:ts && pnpm run lint:docs && pnpm run lint:data",
     "lint:ts": "oxlint packages tests scripts --deny-warnings",
-    "lint:docs": "markdownlint-cli2 \"README.md\" \"docs/**/*.md\"",
+    "lint:docs": "markdownlint-cli2 \"*.md\" \"docs/**/*.md\" && node scripts/check-doc-links.mjs",
     "lint:data": "node scripts/check-structured-files.mjs package.json packages/core/package.json packages/schema/package.json packages/compiler/package.json packages/runtime/package.json pnpm-workspace.yaml .github/workflows/quality.yml .markdownlint-cli2.json .oxlintrc.json .secretlintrc.json tests/fixtures/internal-import/tsconfig.json",
     "typecheck": "tsc -b --pretty false",
     "test": "pnpm run test:unit",
