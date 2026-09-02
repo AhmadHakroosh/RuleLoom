@@ -25,11 +25,12 @@
     "check:delivery-config": "node scripts/check-delivery-config.mjs",
     "check:delivery-contracts": "node scripts/check-delivery-contracts.mjs",
     "check:delivery": "pnpm run check:delivery-config && pnpm run check:delivery-contracts",
+    "check:language-semantics": "node scripts/check-language-semantics.mjs",
     "metadata:check": "node scripts/check-package-metadata.mjs",
     "security:deps": "pnpm audit --audit-level high && node scripts/check-pinned-dependencies.mjs",
     "security:secrets": "secretlint \"**/*.{ts,js,mjs,json,yml,yaml,md}\"",
     "check:gate-failures": "node scripts/check-gate-failures.mjs",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:integration && pnpm run metadata:check && pnpm run check:delivery && pnpm run security:deps && pnpm run security:secrets && pnpm run check:gate-failures"
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test:unit && pnpm run test:integration && pnpm run metadata:check && pnpm run check:delivery && pnpm run check:language-semantics && pnpm run security:deps && pnpm run security:secrets && pnpm run check:gate-failures"
   },
   "devDependencies": {
     "@ruleloom/compiler": "workspace:*",

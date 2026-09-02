@@ -53,6 +53,12 @@ Validate repository-local agent definitions:
 npx pnpm@11.25.0 run lint:agents
 ```
 
+Validate the language semantics specification and conformance fixture references:
+
+```sh
+npx pnpm@11.25.0 run check:language-semantics
+```
+
 Type-check all package source and public declaration output:
 
 ```sh
@@ -157,6 +163,8 @@ Secret scan suppressions are not configured by default. Any future suppression i
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): conduct expectations and escalation path.
 - [SECURITY.md](SECURITY.md): private vulnerability reporting and disclosure process.
 - [docs/agents.md](docs/agents.md): repository-local delivery agent usage and rationale.
+- [docs/rfcs/RL-010-language-semantics.md](docs/rfcs/RL-010-language-semantics.md): approved RFC for v1 language semantics.
+- [docs/specification/language-semantics-v1.md](docs/specification/language-semantics-v1.md): implementation-independent v1 language semantics.
 - [docs/governance/rfc-process.md](docs/governance/rfc-process.md): RFC requirements for semantic and public API changes.
 - [docs/governance/versioning-and-deprecation.md](docs/governance/versioning-and-deprecation.md): compatibility, semantic-versioning, and deprecation policy.
 - [docs/governance/human-approvals.md](docs/governance/human-approvals.md): human-only decision categories.

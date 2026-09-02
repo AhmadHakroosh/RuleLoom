@@ -1,0 +1,319 @@
+{
+  "schemaVersion": "1.0",
+  "specRef": "docs/specification/language-semantics-v1.md",
+  "rfcRef": "docs/rfcs/RL-010-language-semantics.md",
+  "outcomes": ["matched", "notMatched", "indeterminate", "error"],
+  "propagationTables": {
+    "all": [
+      { "case": "empty", "operands": [], "result": "matched" },
+      {
+        "case": "hasNotMatched",
+        "operands": ["matched", "notMatched"],
+        "result": "notMatched"
+      },
+      {
+        "case": "hasError",
+        "operands": ["matched", "error"],
+        "result": "error"
+      },
+      {
+        "case": "hasIndeterminate",
+        "operands": ["matched", "indeterminate"],
+        "result": "indeterminate"
+      },
+      {
+        "case": "allMatched",
+        "operands": ["matched", "matched"],
+        "result": "matched"
+      }
+    ],
+    "any": [
+      { "case": "empty", "operands": [], "result": "notMatched" },
+      {
+        "case": "hasMatched",
+        "operands": ["notMatched", "matched"],
+        "result": "matched"
+      },
+      {
+        "case": "hasError",
+        "operands": ["notMatched", "error"],
+        "result": "error"
+      },
+      {
+        "case": "hasIndeterminate",
+        "operands": ["notMatched", "indeterminate"],
+        "result": "indeterminate"
+      },
+      {
+        "case": "allNotMatched",
+        "operands": ["notMatched", "notMatched"],
+        "result": "notMatched"
+      }
+    ],
+    "not": [
+      { "case": "matched", "operand": "matched", "result": "notMatched" },
+      { "case": "notMatched", "operand": "notMatched", "result": "matched" },
+      {
+        "case": "indeterminate",
+        "operand": "indeterminate",
+        "result": "indeterminate"
+      },
+      { "case": "error", "operand": "error", "result": "error" }
+    ]
+  },
+  "examples": [
+    {
+      "id": "EX-LITERAL-001",
+      "category": "literal",
+      "expression": { "literal": 42 },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched", "value": 42 }
+    },
+    {
+      "id": "EX-FACT-001",
+      "category": "fact",
+      "expression": { "fact": "order", "path": "/total" },
+      "facts": { "order": { "total": 75 } },
+      "parameters": {},
+      "expected": { "outcome": "matched", "value": 75 }
+    },
+    {
+      "id": "EX-MISSING-FACT-001",
+      "category": "missing",
+      "expression": { "fact": "order" },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "indeterminate", "state": "missingFact" }
+    },
+    {
+      "id": "EX-MISSING-PATH-001",
+      "category": "missing",
+      "expression": { "fact": "order", "path": "/missing" },
+      "facts": { "order": {} },
+      "parameters": {},
+      "expected": { "outcome": "indeterminate", "state": "missingPath" }
+    },
+    {
+      "id": "EX-NULL-001",
+      "category": "null",
+      "expression": {
+        "eq": [{ "fact": "order", "path": "/coupon" }, { "literal": null }]
+      },
+      "facts": { "order": { "coupon": null } },
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-PARAMETER-001",
+      "category": "parameter",
+      "expression": { "parameter": "limits", "path": "/minimumAge" },
+      "facts": {},
+      "parameters": { "limits": { "minimumAge": 18 } },
+      "expected": { "outcome": "matched", "value": 18 }
+    },
+    {
+      "id": "EX-ALL-001",
+      "category": "boolean",
+      "expression": {
+        "all": [{ "eq": [{ "fact": "country" }, { "literal": "CA" }] }]
+      },
+      "facts": { "country": "CA" },
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-EMPTY-ALL-001",
+      "category": "boolean",
+      "expression": { "all": [] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-SHORT-CIRCUIT-ALL-001",
+      "category": "boolean",
+      "expression": {
+        "all": [
+          { "eq": [{ "literal": 1 }, { "literal": 2 }] },
+          { "fact": "missing" }
+        ]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "notMatched", "shortCircuitedBefore": 1 }
+    },
+    {
+      "id": "EX-ANY-001",
+      "category": "boolean",
+      "expression": {
+        "any": [
+          { "eq": [{ "literal": "x" }, { "literal": "y" }] },
+          { "eq": [{ "literal": 3 }, { "literal": 3 }] }
+        ]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-EMPTY-ANY-001",
+      "category": "boolean",
+      "expression": { "any": [] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "notMatched" }
+    },
+    {
+      "id": "EX-SHORT-CIRCUIT-ANY-001",
+      "category": "boolean",
+      "expression": {
+        "any": [
+          { "eq": [{ "literal": true }, { "literal": true }] },
+          { "fact": "missing" }
+        ]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched", "shortCircuitedBefore": 1 }
+    },
+    {
+      "id": "EX-NOT-001",
+      "category": "boolean",
+      "expression": {
+        "not": { "eq": [{ "literal": "a" }, { "literal": "b" }] }
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-EQ-001",
+      "category": "comparison",
+      "expression": { "eq": [{ "literal": "gold" }, { "literal": "gold" }] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-EQ-TYPE-001",
+      "category": "comparison",
+      "expression": { "eq": [{ "literal": "1" }, { "literal": 1 }] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "notMatched" }
+    },
+    {
+      "id": "EX-NUMERIC-001",
+      "category": "comparison",
+      "expression": { "gte": [{ "fact": "score" }, { "literal": 90 }] },
+      "facts": { "score": 95 },
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-NUMERIC-TYPE-001",
+      "category": "comparison",
+      "expression": { "lt": [{ "literal": "9" }, { "literal": 10 }] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "error", "state": "operatorError" }
+    },
+    {
+      "id": "EX-IN-001",
+      "category": "membership",
+      "expression": {
+        "in": [{ "literal": "beta" }, { "literal": ["alpha", "beta"] }]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-IN-TYPE-001",
+      "category": "membership",
+      "expression": {
+        "in": [{ "literal": "beta" }, { "literal": "alpha,beta" }]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "error", "state": "operatorError" }
+    },
+    {
+      "id": "EX-OBJECT-EQ-001",
+      "category": "comparison",
+      "expression": {
+        "eq": [
+          { "literal": { "a": 1, "b": 2 } },
+          { "literal": { "b": 2, "a": 1 } }
+        ]
+      },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "matched" }
+    },
+    {
+      "id": "EX-OPERATOR-ERROR-001",
+      "category": "error",
+      "expression": { "gt": [{ "literal": {} }, { "literal": 0 }] },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "error", "state": "operatorError" }
+    },
+    {
+      "id": "EX-RESOLVER-ERROR-001",
+      "category": "error",
+      "expression": { "fact": "remoteRiskScore" },
+      "facts": { "remoteRiskScore": { "$resolverError": "timeout" } },
+      "parameters": {},
+      "expected": { "outcome": "error", "state": "resolverError" }
+    },
+    {
+      "id": "EX-ACTION-ORDER-001",
+      "category": "ordering",
+      "ruleSet": {
+        "rules": [
+          {
+            "id": "approve",
+            "when": { "literal": true },
+            "actions": [{ "type": "notify" }, { "type": "audit" }]
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "matched",
+        "actions": [{ "type": "notify" }, { "type": "audit" }]
+      }
+    },
+    {
+      "id": "EX-RULE-ORDER-001",
+      "category": "ordering",
+      "ruleSet": {
+        "rules": [
+          { "id": "first", "when": { "literal": true } },
+          { "id": "second", "when": { "literal": true } }
+        ]
+      },
+      "expected": { "outcome": "matched", "ruleResults": ["first", "second"] }
+    },
+    {
+      "id": "EX-UNKNOWN-REQUIRED-EXTENSION-001",
+      "category": "extension",
+      "expression": { "extension": "example.future", "required": true },
+      "facts": {},
+      "parameters": {},
+      "expected": { "outcome": "error", "state": "unknownRequiredExtension" }
+    },
+    {
+      "id": "EX-UNKNOWN-OPTIONAL-EXTENSION-001",
+      "category": "extension",
+      "expression": { "extension": "example.future", "required": false },
+      "facts": {},
+      "parameters": {},
+      "expected": {
+        "outcome": "matched",
+        "diagnostic": "unknownOptionalExtension"
+      }
+    }
+  ]
+}
