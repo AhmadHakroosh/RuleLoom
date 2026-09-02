@@ -2,7 +2,7 @@
 name: "PR Coordinator"
 description: "Use when asked to create a PR, fill the PR form, use the VS Code browser, or coordinate a pull request."
 user-invocable: false
-tools: [read, search, execute]
+tools: [read, search, execute, browser]
 agents: []
 ---
 
@@ -24,7 +24,7 @@ You coordinate creation and completion of a GitHub pull request for an approved 
 
 1. Confirm the exact ticket, approved design, delivery evidence, current commit SHA, and authorized base/head branches. The delivery packet and review record in `.delivery/<ticket-id>/` may be read as a convenience when available, but verify them against the exact SHA and verify consistency with the canonical external evidence; the local fallback never replaces the canonical external evidence.
 2. Inspect the diff and required repository checks; prepare a concise title and body that link the ticket and identify requirements, design, delivery evidence, and observed checks.
-3. With explicit human authorization, use the VS Code integrated browser for the GitHub PR form when available. Verify the base and head branches, title and body, linked ticket, checks, and mergeability before submission.
+3. With explicit human authorization, use the VS Code Integrated Browser tool for the GitHub PR form when available. If the VS Code Integrated Browser tool is unavailable, report a blocker. Verify the base and head branches, title and body, linked ticket, checks, and mergeability before submission.
 4. Report the PR URL and number, branches, commit SHA, observed checks, evidence location, and blockers. Leave the work unsubmitted when authorization or required evidence is absent.
 
 ## Output
