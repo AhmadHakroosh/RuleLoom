@@ -2,7 +2,7 @@
 
 This specification defines the implementation-independent semantics for canonical RuleLoom JSON rule constructs. The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are normative.
 
-Every normative example in this document references an executable conformance fixture in [../../tests/fixtures/conformance/language-semantics-v1.json](../../tests/fixtures/conformance/language-semantics-v1.json).
+Every normative example in this document references an executable conformance fixture in [../../tests/fixtures/conformance/language-semantics-v1.json](../../tests/fixtures/conformance/language-semantics-v1.json). The manifest format is defined by [../../contracts/schemas/conformance-manifest-v1.schema.json](../../contracts/schemas/conformance-manifest-v1.schema.json) and is independently versioned from the language schema.
 
 ## Terminology
 

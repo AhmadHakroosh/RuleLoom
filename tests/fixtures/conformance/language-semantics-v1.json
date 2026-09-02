@@ -1,319 +1,598 @@
 {
-  "schemaVersion": "1.0",
-  "specRef": "docs/specification/language-semantics-v1.md",
-  "rfcRef": "docs/rfcs/RL-010-language-semantics.md",
-  "outcomes": ["matched", "notMatched", "indeterminate", "error"],
-  "propagationTables": {
-    "all": [
-      { "case": "empty", "operands": [], "result": "matched" },
-      {
-        "case": "hasNotMatched",
-        "operands": ["matched", "notMatched"],
-        "result": "notMatched"
-      },
-      {
-        "case": "hasError",
-        "operands": ["matched", "error"],
-        "result": "error"
-      },
-      {
-        "case": "hasIndeterminate",
-        "operands": ["matched", "indeterminate"],
-        "result": "indeterminate"
-      },
-      {
-        "case": "allMatched",
-        "operands": ["matched", "matched"],
-        "result": "matched"
-      }
-    ],
-    "any": [
-      { "case": "empty", "operands": [], "result": "notMatched" },
-      {
-        "case": "hasMatched",
-        "operands": ["notMatched", "matched"],
-        "result": "matched"
-      },
-      {
-        "case": "hasError",
-        "operands": ["notMatched", "error"],
-        "result": "error"
-      },
-      {
-        "case": "hasIndeterminate",
-        "operands": ["notMatched", "indeterminate"],
-        "result": "indeterminate"
-      },
-      {
-        "case": "allNotMatched",
-        "operands": ["notMatched", "notMatched"],
-        "result": "notMatched"
-      }
-    ],
-    "not": [
-      { "case": "matched", "operand": "matched", "result": "notMatched" },
-      { "case": "notMatched", "operand": "notMatched", "result": "matched" },
-      {
-        "case": "indeterminate",
-        "operand": "indeterminate",
-        "result": "indeterminate"
-      },
-      { "case": "error", "operand": "error", "result": "error" }
-    ]
-  },
-  "examples": [
+  "fixtures": [
     {
-      "id": "EX-LITERAL-001",
       "category": "literal",
-      "expression": { "literal": 42 },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched", "value": 42 }
+      "expected": { "outcome": "matched", "value": 42 },
+      "id": "EX-LITERAL-001",
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-LITERAL-001"],
+      "sourceDocument": { "expression": { "literal": 42 } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
-      "id": "EX-FACT-001",
       "category": "fact",
-      "expression": { "fact": "order", "path": "/total" },
-      "facts": { "order": { "total": 75 } },
-      "parameters": {},
-      "expected": { "outcome": "matched", "value": 75 }
+      "expected": { "outcome": "matched", "value": 75 },
+      "id": "EX-FACT-001",
+      "input": { "facts": { "order": { "total": 75 } }, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-FACT-001"],
+      "sourceDocument": { "expression": { "fact": "order", "path": "/total" } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "missing",
+      "expected": { "outcome": "indeterminate", "state": "missingFact" },
       "id": "EX-MISSING-FACT-001",
-      "category": "missing",
-      "expression": { "fact": "order" },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "indeterminate", "state": "missingFact" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-MISSING-FACT-001"],
+      "sourceDocument": { "expression": { "fact": "order" } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "missing",
+      "expected": { "outcome": "indeterminate", "state": "missingPath" },
       "id": "EX-MISSING-PATH-001",
-      "category": "missing",
-      "expression": { "fact": "order", "path": "/missing" },
-      "facts": { "order": {} },
-      "parameters": {},
-      "expected": { "outcome": "indeterminate", "state": "missingPath" }
+      "input": { "facts": { "order": {} }, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-MISSING-PATH-001"],
+      "sourceDocument": {
+        "expression": { "fact": "order", "path": "/missing" }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
-      "id": "EX-NULL-001",
       "category": "null",
-      "expression": {
-        "eq": [{ "fact": "order", "path": "/coupon" }, { "literal": null }]
+      "expected": { "outcome": "matched" },
+      "id": "EX-NULL-001",
+      "input": { "facts": { "order": { "coupon": null } }, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-NULL-001"],
+      "sourceDocument": {
+        "expression": {
+          "eq": [{ "fact": "order", "path": "/coupon" }, { "literal": null }]
+        }
       },
-      "facts": { "order": { "coupon": null } },
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
-      "id": "EX-PARAMETER-001",
       "category": "parameter",
-      "expression": { "parameter": "limits", "path": "/minimumAge" },
-      "facts": {},
-      "parameters": { "limits": { "minimumAge": 18 } },
-      "expected": { "outcome": "matched", "value": 18 }
+      "expected": { "outcome": "matched", "value": 18 },
+      "id": "EX-PARAMETER-001",
+      "input": {
+        "facts": {},
+        "parameters": { "limits": { "minimumAge": 18 } }
+      },
+      "normativeRefs": ["RL-010-EX-PARAMETER-001"],
+      "sourceDocument": {
+        "expression": { "parameter": "limits", "path": "/minimumAge" }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "matched" },
       "id": "EX-ALL-001",
-      "category": "boolean",
-      "expression": {
-        "all": [{ "eq": [{ "fact": "country" }, { "literal": "CA" }] }]
+      "input": { "facts": { "country": "CA" }, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-ALL-001"],
+      "sourceDocument": {
+        "expression": {
+          "all": [{ "eq": [{ "fact": "country" }, { "literal": "CA" }] }]
+        }
       },
-      "facts": { "country": "CA" },
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "matched" },
       "id": "EX-EMPTY-ALL-001",
-      "category": "boolean",
-      "expression": { "all": [] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-EMPTY-ALL-001"],
+      "sourceDocument": { "expression": { "all": [] } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "notMatched" },
       "id": "EX-SHORT-CIRCUIT-ALL-001",
-      "category": "boolean",
-      "expression": {
-        "all": [
-          { "eq": [{ "literal": 1 }, { "literal": 2 }] },
-          { "fact": "missing" }
-        ]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-SHORT-CIRCUIT-ALL-001"],
+      "sourceDocument": {
+        "expression": {
+          "all": [
+            { "eq": [{ "literal": 1 }, { "literal": 2 }] },
+            { "fact": "missing" }
+          ]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "notMatched", "shortCircuitedBefore": 1 }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "matched" },
       "id": "EX-ANY-001",
-      "category": "boolean",
-      "expression": {
-        "any": [
-          { "eq": [{ "literal": "x" }, { "literal": "y" }] },
-          { "eq": [{ "literal": 3 }, { "literal": 3 }] }
-        ]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-ANY-001"],
+      "sourceDocument": {
+        "expression": {
+          "any": [
+            { "eq": [{ "literal": "x" }, { "literal": "y" }] },
+            { "eq": [{ "literal": 3 }, { "literal": 3 }] }
+          ]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "notMatched" },
       "id": "EX-EMPTY-ANY-001",
-      "category": "boolean",
-      "expression": { "any": [] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "notMatched" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-EMPTY-ANY-001"],
+      "sourceDocument": { "expression": { "any": [] } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "matched" },
       "id": "EX-SHORT-CIRCUIT-ANY-001",
-      "category": "boolean",
-      "expression": {
-        "any": [
-          { "eq": [{ "literal": true }, { "literal": true }] },
-          { "fact": "missing" }
-        ]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-SHORT-CIRCUIT-ANY-001"],
+      "sourceDocument": {
+        "expression": {
+          "any": [
+            { "eq": [{ "literal": true }, { "literal": true }] },
+            { "fact": "missing" }
+          ]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched", "shortCircuitedBefore": 1 }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "boolean",
+      "expected": { "outcome": "matched" },
       "id": "EX-NOT-001",
-      "category": "boolean",
-      "expression": {
-        "not": { "eq": [{ "literal": "a" }, { "literal": "b" }] }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-NOT-001"],
+      "sourceDocument": {
+        "expression": {
+          "not": { "eq": [{ "literal": "a" }, { "literal": "b" }] }
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "comparison",
+      "expected": { "outcome": "matched" },
       "id": "EX-EQ-001",
-      "category": "comparison",
-      "expression": { "eq": [{ "literal": "gold" }, { "literal": "gold" }] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-EQ-001"],
+      "sourceDocument": {
+        "expression": { "eq": [{ "literal": "gold" }, { "literal": "gold" }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "comparison",
+      "expected": { "outcome": "notMatched" },
       "id": "EX-EQ-TYPE-001",
-      "category": "comparison",
-      "expression": { "eq": [{ "literal": "1" }, { "literal": 1 }] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "notMatched" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-EQ-TYPE-001"],
+      "sourceDocument": {
+        "expression": { "eq": [{ "literal": "1" }, { "literal": 1 }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "comparison",
+      "expected": { "outcome": "matched" },
       "id": "EX-NUMERIC-001",
-      "category": "comparison",
-      "expression": { "gte": [{ "fact": "score" }, { "literal": 90 }] },
-      "facts": { "score": 95 },
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "input": { "facts": { "score": 95 }, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-NUMERIC-001"],
+      "sourceDocument": {
+        "expression": { "gte": [{ "fact": "score" }, { "literal": 90 }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "comparison",
+      "expected": { "outcome": "error", "state": "operatorError" },
       "id": "EX-NUMERIC-TYPE-001",
-      "category": "comparison",
-      "expression": { "lt": [{ "literal": "9" }, { "literal": 10 }] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "error", "state": "operatorError" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-NUMERIC-TYPE-001"],
+      "sourceDocument": {
+        "expression": { "lt": [{ "literal": "9" }, { "literal": 10 }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "membership",
+      "expected": { "outcome": "matched" },
       "id": "EX-IN-001",
-      "category": "membership",
-      "expression": {
-        "in": [{ "literal": "beta" }, { "literal": ["alpha", "beta"] }]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-IN-001"],
+      "sourceDocument": {
+        "expression": {
+          "in": [{ "literal": "beta" }, { "literal": ["alpha", "beta"] }]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "membership",
+      "expected": { "outcome": "error", "state": "operatorError" },
       "id": "EX-IN-TYPE-001",
-      "category": "membership",
-      "expression": {
-        "in": [{ "literal": "beta" }, { "literal": "alpha,beta" }]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-IN-TYPE-001"],
+      "sourceDocument": {
+        "expression": {
+          "in": [{ "literal": "beta" }, { "literal": "alpha,beta" }]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "error", "state": "operatorError" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
-      "id": "EX-OBJECT-EQ-001",
       "category": "comparison",
-      "expression": {
-        "eq": [
-          { "literal": { "a": 1, "b": 2 } },
-          { "literal": { "b": 2, "a": 1 } }
-        ]
+      "expected": { "outcome": "matched" },
+      "id": "EX-OBJECT-EQ-001",
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-OBJECT-EQ-001"],
+      "sourceDocument": {
+        "expression": {
+          "eq": [
+            { "literal": { "a": 1, "b": 2 } },
+            { "literal": { "a": 1, "b": 2 } }
+          ]
+        }
       },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "matched" }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "error",
+      "expected": { "outcome": "error", "state": "operatorError" },
       "id": "EX-OPERATOR-ERROR-001",
-      "category": "error",
-      "expression": { "gt": [{ "literal": {} }, { "literal": 0 }] },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "error", "state": "operatorError" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-OPERATOR-ERROR-001"],
+      "sourceDocument": {
+        "expression": { "gt": [{ "literal": {} }, { "literal": 0 }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "error",
+      "expected": { "outcome": "error", "state": "resolverError" },
       "id": "EX-RESOLVER-ERROR-001",
-      "category": "error",
-      "expression": { "fact": "remoteRiskScore" },
-      "facts": { "remoteRiskScore": { "$resolverError": "timeout" } },
-      "parameters": {},
-      "expected": { "outcome": "error", "state": "resolverError" }
+      "input": {
+        "facts": { "remoteRiskScore": { "$resolverError": "timeout" } },
+        "parameters": {}
+      },
+      "normativeRefs": ["RL-010-EX-RESOLVER-ERROR-001"],
+      "sourceDocument": { "expression": { "fact": "remoteRiskScore" } },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "ordering",
+      "expected": {
+        "actions": [{ "type": "notify" }, { "type": "audit" }],
+        "outcome": "matched"
+      },
       "id": "EX-ACTION-ORDER-001",
-      "category": "ordering",
-      "ruleSet": {
-        "rules": [
-          {
-            "id": "approve",
-            "when": { "literal": true },
-            "actions": [{ "type": "notify" }, { "type": "audit" }]
-          }
-        ]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-ACTION-ORDER-001"],
+      "sourceDocument": {
+        "ruleSet": {
+          "rules": [
+            {
+              "actions": [{ "type": "notify" }, { "type": "audit" }],
+              "id": "approve",
+              "when": { "literal": true }
+            }
+          ]
+        }
       },
-      "expected": {
-        "outcome": "matched",
-        "actions": [{ "type": "notify" }, { "type": "audit" }]
-      }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "ordering",
+      "expected": { "outcome": "matched", "results": ["first", "second"] },
       "id": "EX-RULE-ORDER-001",
-      "category": "ordering",
-      "ruleSet": {
-        "rules": [
-          { "id": "first", "when": { "literal": true } },
-          { "id": "second", "when": { "literal": true } }
-        ]
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-RULE-ORDER-001"],
+      "sourceDocument": {
+        "ruleSet": {
+          "rules": [
+            { "id": "first", "when": { "literal": true } },
+            { "id": "second", "when": { "literal": true } }
+          ]
+        }
       },
-      "expected": { "outcome": "matched", "ruleResults": ["first", "second"] }
+      "support": ["schema", "compile", "evaluate"]
     },
     {
+      "category": "extension",
+      "expected": { "outcome": "error", "state": "unknownRequiredExtension" },
       "id": "EX-UNKNOWN-REQUIRED-EXTENSION-001",
-      "category": "extension",
-      "expression": { "extension": "example.future", "required": true },
-      "facts": {},
-      "parameters": {},
-      "expected": { "outcome": "error", "state": "unknownRequiredExtension" }
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-UNKNOWN-REQUIRED-EXTENSION-001"],
+      "sourceDocument": {
+        "expression": { "extension": "example.future", "required": true }
+      },
+      "support": ["schema", "compile", "evaluate"]
     },
     {
-      "id": "EX-UNKNOWN-OPTIONAL-EXTENSION-001",
       "category": "extension",
-      "expression": { "extension": "example.future", "required": false },
-      "facts": {},
-      "parameters": {},
+      "expected": { "outcome": "matched" },
+      "id": "EX-UNKNOWN-OPTIONAL-EXTENSION-001",
+      "input": { "facts": {}, "parameters": {} },
+      "normativeRefs": ["RL-010-EX-UNKNOWN-OPTIONAL-EXTENSION-001"],
+      "sourceDocument": {
+        "expression": { "extension": "example.future", "required": false }
+      },
+      "support": ["schema", "compile", "evaluate"]
+    },
+    {
+      "category": "reference",
+      "expected": { "outcome": "matched", "value": true },
+      "id": "EX-LOCAL-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": { "expression": { "local": "isEligible" } },
+      "support": ["schema", "compile"]
+    },
+    {
+      "category": "invalidShape",
       "expected": {
-        "outcome": "matched",
-        "diagnostic": "unknownOptionalExtension"
-      }
+        "diagnostics": [{ "code": "RL_INVALID_SHAPE" }],
+        "outcome": "error"
+      },
+      "id": "EX-INVALID-SHAPE-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": { "expression": { "eq": [] } },
+      "support": ["schema"]
+    },
+    {
+      "category": "unknownReference",
+      "expected": {
+        "diagnostics": [{ "code": "RL_UNKNOWN_REFERENCE" }],
+        "outcome": "error"
+      },
+      "id": "EX-UNKNOWN-REFERENCE-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": { "expression": { "local": "missingLocal" } },
+      "support": ["schema", "compile"]
+    },
+    {
+      "category": "arity",
+      "expected": {
+        "diagnostics": [{ "code": "RL_INVALID_ARITY" }],
+        "outcome": "error"
+      },
+      "id": "EX-BAD-ARITY-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": {
+        "expression": { "not": [{ "literal": true }, { "literal": false }] }
+      },
+      "support": ["schema", "compile"]
+    },
+    {
+      "category": "cycle",
+      "expected": {
+        "diagnostics": [{ "code": "RL_CYCLIC_REFERENCE" }],
+        "outcome": "error"
+      },
+      "id": "EX-CYCLE-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": { "expression": { "local": "cycleA" } },
+      "support": ["schema", "compile"]
+    },
+    {
+      "category": "path",
+      "expected": {
+        "diagnostics": [{ "code": "RL_UNSAFE_PATH" }],
+        "outcome": "error"
+      },
+      "id": "EX-UNSAFE-PATH-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": {
+        "expression": { "fact": "order", "path": "/__proto__/polluted" }
+      },
+      "support": ["schema"]
+    },
+    {
+      "category": "boundary",
+      "expected": { "outcome": "matched", "value": [] },
+      "id": "EX-EMPTY-COLLECTION-001",
+      "input": { "facts": { "items": [] }, "parameters": {} },
+      "sourceDocument": { "expression": { "fact": "items" } },
+      "support": ["schema", "compile", "evaluate"]
+    },
+    {
+      "category": "boundary",
+      "expected": { "outcome": "matched" },
+      "id": "EX-NUMERIC-BOUNDARIES-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": {
+        "expression": {
+          "eq": [
+            { "literal": -9007199254740991 },
+            { "literal": -9007199254740991 }
+          ]
+        }
+      },
+      "support": ["schema", "compile", "evaluate"]
+    },
+    {
+      "category": "determinism",
+      "expected": { "outcome": "matched" },
+      "id": "EX-OBJECT-INSERTION-ORDER-001",
+      "input": {
+        "facts": { "first": { "a": 1, "b": 2 }, "second": { "a": 1, "b": 2 } },
+        "parameters": {}
+      },
+      "sourceDocument": {
+        "expression": { "eq": [{ "fact": "first" }, { "fact": "second" }] }
+      },
+      "support": ["schema", "compile", "evaluate"]
+    },
+    {
+      "category": "determinism",
+      "expected": { "outcome": "matched", "results": ["first", "second"] },
+      "id": "EX-ASYNC-COMPLETION-ORDER-001",
+      "input": {
+        "facts": { "completionOrder": ["second", "first"] },
+        "parameters": {}
+      },
+      "sourceDocument": {
+        "ruleSet": {
+          "rules": [
+            { "id": "first", "when": { "literal": true } },
+            { "id": "second", "when": { "literal": true } }
+          ]
+        }
+      },
+      "support": ["schema", "compile", "evaluate"]
+    },
+    {
+      "category": "trace",
+      "expected": { "outcome": "matched" },
+      "id": "EX-TRACE-ASSERTION-001",
+      "input": { "facts": {}, "parameters": {} },
+      "sourceDocument": { "expression": { "literal": true } },
+      "support": ["schema", "compile", "evaluate"],
+      "traceAssertions": [{ "assert": "evaluated", "path": "/literal" }]
     }
-  ]
+  ],
+  "languageVersion": "1.0",
+  "manifestVersion": "1.0.0",
+  "normativeRefs": [
+    {
+      "clause": "RL-010 normative example EX-LITERAL-001",
+      "fixtureIds": ["EX-LITERAL-001"],
+      "id": "RL-010-EX-LITERAL-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-FACT-001",
+      "fixtureIds": ["EX-FACT-001"],
+      "id": "RL-010-EX-FACT-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-MISSING-FACT-001",
+      "fixtureIds": ["EX-MISSING-FACT-001"],
+      "id": "RL-010-EX-MISSING-FACT-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-MISSING-PATH-001",
+      "fixtureIds": ["EX-MISSING-PATH-001"],
+      "id": "RL-010-EX-MISSING-PATH-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-NULL-001",
+      "fixtureIds": ["EX-NULL-001"],
+      "id": "RL-010-EX-NULL-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-PARAMETER-001",
+      "fixtureIds": ["EX-PARAMETER-001"],
+      "id": "RL-010-EX-PARAMETER-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-ALL-001",
+      "fixtureIds": ["EX-ALL-001"],
+      "id": "RL-010-EX-ALL-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-EMPTY-ALL-001",
+      "fixtureIds": ["EX-EMPTY-ALL-001"],
+      "id": "RL-010-EX-EMPTY-ALL-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-SHORT-CIRCUIT-ALL-001",
+      "fixtureIds": ["EX-SHORT-CIRCUIT-ALL-001"],
+      "id": "RL-010-EX-SHORT-CIRCUIT-ALL-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-ANY-001",
+      "fixtureIds": ["EX-ANY-001"],
+      "id": "RL-010-EX-ANY-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-EMPTY-ANY-001",
+      "fixtureIds": ["EX-EMPTY-ANY-001"],
+      "id": "RL-010-EX-EMPTY-ANY-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-SHORT-CIRCUIT-ANY-001",
+      "fixtureIds": ["EX-SHORT-CIRCUIT-ANY-001"],
+      "id": "RL-010-EX-SHORT-CIRCUIT-ANY-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-NOT-001",
+      "fixtureIds": ["EX-NOT-001"],
+      "id": "RL-010-EX-NOT-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-EQ-001",
+      "fixtureIds": ["EX-EQ-001"],
+      "id": "RL-010-EX-EQ-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-EQ-TYPE-001",
+      "fixtureIds": ["EX-EQ-TYPE-001"],
+      "id": "RL-010-EX-EQ-TYPE-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-NUMERIC-001",
+      "fixtureIds": ["EX-NUMERIC-001"],
+      "id": "RL-010-EX-NUMERIC-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-NUMERIC-TYPE-001",
+      "fixtureIds": ["EX-NUMERIC-TYPE-001"],
+      "id": "RL-010-EX-NUMERIC-TYPE-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-IN-001",
+      "fixtureIds": ["EX-IN-001"],
+      "id": "RL-010-EX-IN-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-IN-TYPE-001",
+      "fixtureIds": ["EX-IN-TYPE-001"],
+      "id": "RL-010-EX-IN-TYPE-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-OBJECT-EQ-001",
+      "fixtureIds": ["EX-OBJECT-EQ-001"],
+      "id": "RL-010-EX-OBJECT-EQ-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-OPERATOR-ERROR-001",
+      "fixtureIds": ["EX-OPERATOR-ERROR-001"],
+      "id": "RL-010-EX-OPERATOR-ERROR-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-RESOLVER-ERROR-001",
+      "fixtureIds": ["EX-RESOLVER-ERROR-001"],
+      "id": "RL-010-EX-RESOLVER-ERROR-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-ACTION-ORDER-001",
+      "fixtureIds": ["EX-ACTION-ORDER-001"],
+      "id": "RL-010-EX-ACTION-ORDER-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-RULE-ORDER-001",
+      "fixtureIds": ["EX-RULE-ORDER-001"],
+      "id": "RL-010-EX-RULE-ORDER-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-UNKNOWN-REQUIRED-EXTENSION-001",
+      "fixtureIds": ["EX-UNKNOWN-REQUIRED-EXTENSION-001"],
+      "id": "RL-010-EX-UNKNOWN-REQUIRED-EXTENSION-001"
+    },
+    {
+      "clause": "RL-010 normative example EX-UNKNOWN-OPTIONAL-EXTENSION-001",
+      "fixtureIds": ["EX-UNKNOWN-OPTIONAL-EXTENSION-001"],
+      "id": "RL-010-EX-UNKNOWN-OPTIONAL-EXTENSION-001"
+    }
+  ],
+  "registryContract": {
+    "extensions": [],
+    "operators": ["all", "any", "not", "eq", "lt", "lte", "gt", "gte", "in"]
+  }
 }
