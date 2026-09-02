@@ -67,6 +67,43 @@ describe("language semantics validation", () => {
     expect(() => runSemanticsCheck([invalidFixturePath])).toThrow();
   });
 
+  it("rejects missing source documents and required fields", async () => {
+    const invalidFixturePath = await writeFixtureCopy((fixture) => {
+      delete fixture.fixtures[0].sourceDocument;
+      delete fixture.fixtures[0].input.parameters;
+    });
+
+    expect(() => runSemanticsCheck([invalidFixturePath])).toThrow();
+  });
+
+  it("rejects invalid diagnostic codes", async () => {
+    const invalidFixturePath = await writeFixtureCopy((fixture) => {
+      fixture.fixtures[0].expected.diagnostics = [{ code: "invalid" }];
+    });
+
+    expect(() => runSemanticsCheck([invalidFixturePath])).toThrow();
+  });
+
+  it("rejects prototype-pollution keys in JSON values", async () => {
+    const invalidFixturePath = await writeFixtureCopy((fixture) => {
+      fixture.fixtures[0].sourceDocument = { constructor: true };
+    });
+
+    expect(() => runSemanticsCheck([invalidFixturePath])).toThrow();
+  });
+
+  it("rejects malformed normative references and accepts multi-ID mappings", async () => {
+    const malformedPath = await writeFixtureCopy((fixture) => {
+      fixture.normativeRefs[0].fixtureIds = "EX-LITERAL-001";
+    });
+    expect(() => runSemanticsCheck([malformedPath])).toThrow();
+
+    const multiIdPath = await writeFixtureCopy((fixture) => {
+      fixture.normativeRefs[0].fixtureIds.push("EX-FACT-001");
+    });
+    expect(runSemanticsCheck([multiIdPath])).toContain("Validated 37");
+  });
+
   it("reports unsupported stages explicitly", async () => {
     const calls: string[] = [];
     const adapter: ConformanceAdapter = {
@@ -78,7 +115,8 @@ describe("language semantics validation", () => {
       },
     };
     const manifest = JSON.parse(await readFile(fixturePath, "utf8"));
-    const [report] = await reportFixtureSupport(manifest, adapter);
+    const reports = await reportFixtureSupport(manifest, adapter);
+    const [report] = reports;
     expect(report.stages).toEqual({
       schema: "supported",
       compile: "unsupported",
@@ -86,5 +124,11 @@ describe("language semantics validation", () => {
     });
     expect(calls).toHaveLength(manifest.fixtures.length);
     expect(calls[0]).toBe("EX-LITERAL-001:schema");
+    expect(
+      reports.every((entry) => entry.stages.compile === "unsupported"),
+    ).toBe(true);
+    expect(
+      reports.every((entry) => entry.stages.evaluate === "unsupported"),
+    ).toBe(true);
   });
 });

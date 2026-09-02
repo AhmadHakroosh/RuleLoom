@@ -5,6 +5,13 @@ const manifestPath =
 const schemaPath = "contracts/schemas/conformance-manifest-v1.schema.json";
 const specPath = "docs/specification/language-semantics-v1.md";
 const failures = [];
+const manifestKeys = new Set([
+  "manifestVersion",
+  "languageVersion",
+  "normativeRefs",
+  "registryContract",
+  "fixtures",
+]);
 const fixtureKeys = new Set([
   "id",
   "category",
@@ -15,42 +22,13 @@ const fixtureKeys = new Set([
   "traceAssertions",
   "normativeRefs",
 ]);
-const manifestKeys = new Set([
-  "manifestVersion",
-  "languageVersion",
-  "normativeRefs",
-  "registryContract",
-  "fixtures",
-]);
-const requiredIds = new Set([
-  "EX-LITERAL-001",
-  "EX-FACT-001",
-  "EX-MISSING-FACT-001",
-  "EX-MISSING-PATH-001",
-  "EX-NULL-001",
-  "EX-PARAMETER-001",
-  "EX-ALL-001",
-  "EX-EMPTY-ALL-001",
-  "EX-SHORT-CIRCUIT-ALL-001",
-  "EX-ANY-001",
-  "EX-EMPTY-ANY-001",
-  "EX-SHORT-CIRCUIT-ANY-001",
-  "EX-NOT-001",
-  "EX-EQ-001",
-  "EX-EQ-TYPE-001",
-  "EX-NUMERIC-001",
-  "EX-NUMERIC-TYPE-001",
-  "EX-IN-001",
-  "EX-IN-TYPE-001",
-  "EX-OBJECT-EQ-001",
-  "EX-OPERATOR-ERROR-001",
-  "EX-RESOLVER-ERROR-001",
-  "EX-ACTION-ORDER-001",
-  "EX-RULE-ORDER-001",
-  "EX-UNKNOWN-REQUIRED-EXTENSION-001",
-  "EX-UNKNOWN-OPTIONAL-EXTENSION-001",
-]);
+const identifierPattern = /^[A-Z][A-Z0-9-]{2,127}$/u;
+const normativeIdPattern = /^RL-010-[A-Z0-9-]+$/u;
+const diagnosticCodePattern = /^RL_[A-Z0-9_]+$/u;
+const pointerPattern = /^(?:$|\/(?:[^/~]|~0|~1)*)*$/u;
+const supportStages = new Set(["schema", "compile", "evaluate"]);
 const outcomes = new Set(["matched", "notMatched", "indeterminate", "error"]);
+const pollutionKeys = new Set(["__proto__", "constructor", "prototype"]);
 
 function isObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -66,51 +44,174 @@ function keys(value, allowed, path) {
   }
 }
 
+function validateJsonValue(value, path) {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) failures.push(`${path} must be a JSON number`);
+    return;
+  }
+  if (value === null || typeof value === "string" || typeof value === "boolean")
+    return;
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) =>
+      validateJsonValue(entry, `${path}[${index}]`),
+    );
+    return;
+  }
+  if (isObject(value)) {
+    for (const [key, entry] of Object.entries(value)) {
+      if (pollutionKeys.has(key))
+        failures.push(`${path} contains forbidden key: ${key}`);
+      validateJsonValue(entry, `${path}.${key}`);
+    }
+    return;
+  }
+  failures.push(`${path} must be a JSON value`);
+}
+
+function validateString(value, path, { minLength = 0, pattern } = {}) {
+  if (typeof value !== "string") failures.push(`${path} must be a string`);
+  else {
+    if (value.length < minLength) failures.push(`${path} must not be empty`);
+    if (pattern && !pattern.test(value))
+      failures.push(`${path} has an invalid format`);
+  }
+}
+
+function validateArray(
+  value,
+  path,
+  validator,
+  { unique = false, minItems = 0 } = {},
+) {
+  if (!Array.isArray(value)) {
+    failures.push(`${path} must be an array`);
+    return;
+  }
+  if (value.length < minItems) failures.push(`${path} must not be empty`);
+  const serialized = new Set();
+  value.forEach((entry, index) => {
+    if (unique) {
+      const key = JSON.stringify(entry);
+      if (serialized.has(key))
+        failures.push(`${path} must not contain duplicates`);
+      serialized.add(key);
+    }
+    validator(entry, `${path}[${index}]`);
+  });
+}
+
+function validateDiagnostic(value, path) {
+  keys(value, new Set(["code", "path", "severity", "message"]), path);
+  if (!isObject(value)) return;
+  validateString(value.code, `${path}.code`, {
+    pattern: diagnosticCodePattern,
+  });
+  if (value.path !== undefined)
+    validateString(value.path, `${path}.path`, { pattern: pointerPattern });
+  if (
+    value.severity !== undefined &&
+    !["info", "warning", "error"].includes(value.severity)
+  )
+    failures.push(`${path}.severity has an invalid value`);
+  if (value.message !== undefined)
+    validateString(value.message, `${path}.message`);
+}
+
+function validateExpected(value, path) {
+  keys(
+    value,
+    new Set(["outcome", "state", "value", "results", "actions", "diagnostics"]),
+    path,
+  );
+  if (!isObject(value)) return;
+  if (!outcomes.has(value.outcome))
+    failures.push(`${path}.outcome has an invalid value`);
+  if (value.state !== undefined)
+    validateString(value.state, `${path}.state`, { minLength: 1 });
+  if (Object.hasOwn(value, "value"))
+    validateJsonValue(value.value, `${path}.value`);
+  for (const key of ["results", "actions"])
+    if (value[key] !== undefined)
+      validateArray(value[key], `${path}.${key}`, validateJsonValue);
+  if (value.diagnostics !== undefined)
+    validateArray(value.diagnostics, `${path}.diagnostics`, validateDiagnostic);
+}
+
 function validateFixture(fixture, index, refs) {
   const path = `fixtures[${index}]`;
   keys(fixture, fixtureKeys, path);
-  if (
-    typeof fixture.id !== "string" ||
-    !/^[A-Z][A-Z0-9-]{2,127}$/u.test(fixture.id)
-  ) {
-    failures.push(`${path}.id must be a valid fixture identifier`);
-  }
-  if (
-    !Array.isArray(fixture.support) ||
-    fixture.support.some(
-      (stage) => !["schema", "compile", "evaluate"].includes(stage),
-    )
-  ) {
-    failures.push(
-      `${path}.support must contain only schema, compile, or evaluate`,
-    );
-  }
-  if (
-    !isObject(fixture.input) ||
-    !Object.hasOwn(fixture.input, "facts") ||
-    !Object.hasOwn(fixture.input, "parameters")
-  ) {
-    failures.push(`${fixture.id}.input must contain facts and parameters`);
-  } else {
-    keys(fixture.input, new Set(["facts", "parameters"]), `${path}.input`);
-  }
-  keys(
-    fixture.expected,
-    new Set(["actions", "diagnostics", "outcome", "results", "state", "value"]),
-    `${path}.expected`,
+  if (!isObject(fixture)) return;
+  validateString(fixture.id, `${path}.id`, { pattern: identifierPattern });
+  validateString(fixture.category, `${path}.category`, { minLength: 1 });
+  validateArray(
+    fixture.support,
+    `${path}.support`,
+    (stage, stagePath) => {
+      if (!supportStages.has(stage))
+        failures.push(`${stagePath} has an invalid value`);
+    },
+    { unique: true },
   );
-  if (!isObject(fixture.expected) || !outcomes.has(fixture.expected.outcome)) {
-    failures.push(`${fixture.id}.expected.outcome is invalid`);
+  if (!Object.hasOwn(fixture, "sourceDocument"))
+    failures.push(`${path} is missing required field: sourceDocument`);
+  else validateJsonValue(fixture.sourceDocument, `${path}.sourceDocument`);
+  if (!isObject(fixture.input))
+    failures.push(`${path}.input must be an object`);
+  else {
+    keys(fixture.input, new Set(["facts", "parameters"]), `${path}.input`);
+    for (const key of ["facts", "parameters"]) {
+      if (!Object.hasOwn(fixture.input, key))
+        failures.push(`${path}.input is missing required field: ${key}`);
+      else validateJsonValue(fixture.input[key], `${path}.input.${key}`);
+    }
   }
-  for (const ref of fixture.normativeRefs ?? []) {
-    if (!refs.has(ref))
-      failures.push(`${fixture.id} references unknown normative ref: ${ref}`);
-  }
-  if (
-    fixture.normativeRefs !== undefined &&
-    !Array.isArray(fixture.normativeRefs)
-  )
-    failures.push(`${fixture.id}.normativeRefs must be an array`);
+  validateExpected(fixture.expected, `${path}.expected`);
+  if (fixture.traceAssertions !== undefined)
+    validateArray(
+      fixture.traceAssertions,
+      `${path}.traceAssertions`,
+      validateJsonValue,
+    );
+  if (fixture.normativeRefs !== undefined)
+    validateArray(
+      fixture.normativeRefs,
+      `${path}.normativeRefs`,
+      (ref, refPath) =>
+        validateString(ref, refPath, { pattern: normativeIdPattern }),
+      { unique: true },
+    );
+  if (Array.isArray(fixture.normativeRefs))
+    for (const ref of fixture.normativeRefs)
+      if (refs && !refs.has(ref))
+        failures.push(`${path} references unknown normative ref: ${ref}`);
+}
+
+function validateNormativeRef(ref, index) {
+  const path = `normativeRefs[${index}]`;
+  keys(ref, new Set(["id", "clause", "fixtureIds"]), path);
+  if (!isObject(ref)) return;
+  validateString(ref.id, `${path}.id`, { pattern: normativeIdPattern });
+  validateString(ref.clause, `${path}.clause`, { minLength: 1 });
+  validateArray(
+    ref.fixtureIds,
+    `${path}.fixtureIds`,
+    (fixtureId, fixturePath) => {
+      validateString(fixtureId, fixturePath, { pattern: identifierPattern });
+    },
+    { minItems: 1, unique: true },
+  );
+}
+
+function validateRegistryContract(value) {
+  keys(value, new Set(["operators", "extensions"]), "registryContract");
+  if (!isObject(value)) return;
+  for (const key of ["operators", "extensions"])
+    validateArray(
+      value[key],
+      `registryContract.${key}`,
+      (entry, path) => validateString(entry, path, { minLength: 1 }),
+      { unique: true },
+    );
 }
 
 function validatePortable(value, path = "manifest") {
@@ -165,19 +266,30 @@ try {
 }
 try {
   schema = JSON.parse(schemaText);
-  if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema")
+  if (
+    !isObject(schema) ||
+    schema.$schema !== "https://json-schema.org/draft/2020-12/schema"
+  )
     failures.push("schema must declare Draft 2020-12");
 } catch (error) {
   failures.push(`conformance schema is not valid JSON: ${error.message}`);
 }
 
-if (manifest) {
+if (isObject(manifest)) {
   keys(manifest, manifestKeys, "manifest");
   if (manifest.manifestVersion !== "1.0.0")
     failures.push("manifestVersion must be 1.0.0");
   if (manifest.languageVersion !== "1.0")
     failures.push("languageVersion must be 1.0");
+  validateArray(manifest.normativeRefs, "normativeRefs", validateNormativeRef, {
+    minItems: 1,
+  });
+  validateRegistryContract(manifest.registryContract);
   const fixtures = Array.isArray(manifest.fixtures) ? manifest.fixtures : [];
+  if (!Array.isArray(manifest.fixtures))
+    failures.push("fixtures must be an array");
+  else if (manifest.fixtures.length === 0)
+    failures.push("fixtures must not be empty");
   const seen = new Set();
   for (const fixture of fixtures) {
     if (isObject(fixture) && seen.has(fixture.id))
@@ -188,25 +300,11 @@ if (manifest) {
   for (const ref of Array.isArray(manifest.normativeRefs)
     ? manifest.normativeRefs
     : []) {
-    keys(ref, new Set(["clause", "fixtureIds", "id"]), "normativeRefs entry");
-    if (!isObject(ref) || typeof ref.id !== "string")
-      failures.push("normativeRefs entries must have an id");
-    else {
+    if (isObject(ref) && typeof ref.id === "string") {
       if (refs.has(ref.id)) failures.push(`duplicate normative ref: ${ref.id}`);
       refs.add(ref.id);
-      if (!Array.isArray(ref.fixtureIds) || ref.fixtureIds.length === 0)
-        failures.push(`${ref.id} must map to fixture IDs`);
-      if (!specText.includes(ref.fixtureIds?.[0] ?? ""))
-        failures.push(
-          `${ref.id} must map to an RL-010 example referenced by the spec`,
-        );
     }
   }
-  keys(
-    manifest.registryContract,
-    new Set(["extensions", "operators"]),
-    "registryContract",
-  );
   const fixtureIds = new Set(fixtures.map((fixture) => fixture?.id));
   for (const ref of Array.isArray(manifest.normativeRefs)
     ? manifest.normativeRefs
@@ -217,12 +315,25 @@ if (manifest) {
   }
   for (const fixture of fixtures)
     validateFixture(fixture, fixtures.indexOf(fixture), refs);
-  for (const id of requiredIds)
+  const specFixtureIds = new Set(specText.match(/\bEX-[A-Z0-9-]+\b/gu) ?? []);
+  const mappedFixtureIds = new Set(
+    (Array.isArray(manifest.normativeRefs)
+      ? manifest.normativeRefs
+      : []
+    ).flatMap((ref) => (Array.isArray(ref?.fixtureIds) ? ref.fixtureIds : [])),
+  );
+  for (const id of specFixtureIds) {
     if (!fixtureIds.has(id))
-      failures.push(`missing required RL-010 fixture: ${id}`);
-  for (const id of requiredIds)
-    if (!manifest.normativeRefs?.some((ref) => ref.fixtureIds.includes(id)))
-      failures.push(`RL-010 fixture is not traceable: ${id}`);
+      failures.push(`missing fixture referenced by spec: ${id}`);
+    if (!mappedFixtureIds.has(id))
+      failures.push(`spec fixture is not traceable: ${id}`);
+  }
+  for (const id of mappedFixtureIds) {
+    if (!fixtureIds.has(id))
+      failures.push(`normative mapping references missing fixture: ${id}`);
+    if (!specFixtureIds.has(id))
+      failures.push(`normative mapping references unknown spec fixture: ${id}`);
+  }
   validatePortable(manifest);
   checkCanonicalKeys(manifest);
 }
@@ -232,6 +343,16 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
+if (!isObject(manifest)) {
+  console.error("manifest must be an object");
+  process.exit(1);
+}
+const fixtureCount = Array.isArray(manifest.fixtures)
+  ? manifest.fixtures.length
+  : 0;
+const normativeRefCount = Array.isArray(manifest.normativeRefs)
+  ? manifest.normativeRefs.length
+  : 0;
 console.log(
-  `Validated ${manifest.fixtures.length} conformance fixtures and ${manifest.normativeRefs.length} normative references`,
+  `Validated ${fixtureCount} conformance fixtures and ${normativeRefCount} normative references`,
 );
