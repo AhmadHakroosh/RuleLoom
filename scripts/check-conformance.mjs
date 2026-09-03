@@ -1,4 +1,8 @@
 import { readFile } from "node:fs/promises";
+import {
+  isCompilerStructuralFixture,
+  runCompilerStructuralFixture,
+} from "./compiler-conformance-adapter.ts";
 
 const manifestPath =
   process.argv[2] ?? "tests/fixtures/conformance/language-semantics-v1.json";
@@ -336,6 +340,41 @@ if (isObject(manifest)) {
   }
   validatePortable(manifest);
   checkCanonicalKeys(manifest);
+
+  const compilerStructuralFixtures = fixtures.filter(
+    isCompilerStructuralFixture,
+  );
+  const compilerStructuralIds = compilerStructuralFixtures.map(
+    (fixture) => fixture.id,
+  );
+  if (
+    JSON.stringify(compilerStructuralIds) !==
+    JSON.stringify(["EX-INVALID-SHAPE-001"])
+  ) {
+    failures.push(
+      "compiler structural subset must include only EX-INVALID-SHAPE-001",
+    );
+  }
+  const unsafePathFixture = fixtures.find(
+    (fixture) => fixture?.id === "EX-UNSAFE-PATH-001",
+  );
+  if (
+    unsafePathFixture === undefined ||
+    isCompilerStructuralFixture(unsafePathFixture)
+  ) {
+    failures.push("compiler structural subset must exclude EX-UNSAFE-PATH-001");
+  }
+  for (const fixture of compilerStructuralFixtures) {
+    const execution = runCompilerStructuralFixture(fixture);
+    if (
+      execution?.status !== "passed" ||
+      !execution.diagnostics?.some(
+        (diagnostic) => diagnostic.code === "RL_SCHEMA_TYPE",
+      )
+    ) {
+      failures.push(`${fixture.id} failed compiler structural mapping`);
+    }
+  }
 }
 
 if (failures.length) {
@@ -354,5 +393,5 @@ const normativeRefCount = Array.isArray(manifest.normativeRefs)
   ? manifest.normativeRefs.length
   : 0;
 console.log(
-  `Validated ${fixtureCount} conformance fixtures and ${normativeRefCount} normative references`,
+  `Validated ${fixtureCount} conformance fixtures and ${normativeRefCount} normative references; compiler structural subset passed`,
 );

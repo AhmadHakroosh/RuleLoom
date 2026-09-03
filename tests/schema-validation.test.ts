@@ -32,6 +32,21 @@ function wrapRuleSetExample(id: string, ruleSet: { rules?: unknown }) {
 }
 
 describe("RuleLoom schema validation", () => {
+  it("keeps legacy diagnostics arrays free of enumerable metadata", () => {
+    const result = validateRuleSetDocument({});
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(Object.keys(result.diagnostics)).toEqual([
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+      ]);
+    }
+  });
+
   it("exports a stable Draft 2020-12 schema", () => {
     expect(ruleLoomV1Schema.$schema).toBe(
       "https://json-schema.org/draft/2020-12/schema",

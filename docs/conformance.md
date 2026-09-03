@@ -11,3 +11,10 @@ npx pnpm@11.25.0 run check:conformance
 ```
 
 It rejects malformed manifests, unknown fields, duplicate IDs, incomplete RL-010 traceability, non-canonical object key order, and non-portable dependencies. `check:language-semantics` remains as the RL-010 compatibility entry point and invokes the same validator.
+
+RL-020 provides a conformance-only structural projection in
+[compiler-conformance-adapter.ts](../scripts/compiler-conformance-adapter.ts).
+It projects eligible expression and rule-set fragments into canonical source
+documents and maps legacy `RL_INVALID_SHAPE` expectations to `RL_SCHEMA_TYPE`.
+It excludes `RL_UNSAFE_PATH` and non-structural semantic cases; it does not
+alter the manifest or parser diagnostic contracts.

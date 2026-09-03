@@ -175,3 +175,4 @@ Secret scan suppressions are not configured by default. Any future suppression i
 - [docs/governance/versioning-and-deprecation.md](docs/governance/versioning-and-deprecation.md): compatibility, semantic-versioning, and deprecation policy.
 - [docs/governance/human-approvals.md](docs/governance/human-approvals.md): human-only decision categories.
 - [docs/governance/ownership.md](docs/governance/ownership.md): review ownership guidance by path.
+- [docs/compiler-parsing.md](docs/compiler-parsing.md): compiler document parsing API and diagnostics.

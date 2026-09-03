@@ -3,6 +3,8 @@ import {
   compilerCoreDependency,
   compilerPackageName,
   compilerSchemaDependency,
+  parseRuleSetDocument,
+  validateRuleSetDocumentInput,
 } from "@ruleloom/compiler";
 import { corePackageName } from "@ruleloom/core";
 import { runtimeCoreDependency, runtimePackageName } from "@ruleloom/runtime";
@@ -14,6 +16,8 @@ describe("public package entries", () => {
     expect(schemaPackageName).toBe("@ruleloom/schema");
     expect(compilerPackageName).toBe("@ruleloom/compiler");
     expect(runtimePackageName).toBe("@ruleloom/runtime");
+    expect(parseRuleSetDocument).toBeTypeOf("function");
+    expect(validateRuleSetDocumentInput).toBeTypeOf("function");
   });
 
   it("preserves the approved package dependency direction", () => {
