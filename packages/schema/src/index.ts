@@ -358,8 +358,9 @@ export function validateRuleSetDocument(
   value: unknown,
   maxDiagnostics = Number.POSITIVE_INFINITY,
 ): RuleSetValidationResult {
-  const diagnostics = Object.assign([] as SchemaDiagnostic[], {
-    maxDiagnostics,
+  const diagnostics = [] as SchemaDiagnostic[];
+  Object.defineProperty(diagnostics, "maxDiagnostics", {
+    value: maxDiagnostics,
   });
   validateRuleSet(value, "", diagnostics);
 
