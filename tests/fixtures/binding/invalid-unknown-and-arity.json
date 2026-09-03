@@ -1,0 +1,26 @@
+{
+  "document": {
+    "schemaVersion": "1.0",
+    "id": "example",
+    "rules": [
+      {
+        "id": "rule",
+        "when": { "eq": [{ "fact": "unknown" }, { "literal": 1 }] }
+      }
+    ]
+  },
+  "facts": [],
+  "operators": [
+    {
+      "id": "eq",
+      "version": "1",
+      "inputTypes": [],
+      "outputType": "boolean",
+      "arity": 0,
+      "pure": true,
+      "costClass": "constant",
+      "async": false
+    }
+  ],
+  "expectedDiagnostics": ["RL_BIND_ARITY", "RL_BIND_UNKNOWN_SYMBOL"]
+}

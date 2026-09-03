@@ -10,6 +10,24 @@ Both return `{ ok: true, document }` for a valid, deeply frozen v1
 The unknown-value API clones JSON-compatible own data properties before
 validation; it does not mutate or freeze caller-owned values.
 
+## Binding contract
+
+RL-021 binds the v1 `local` expression form only as a reference shape. The
+v1 schema declares no local-definition or reusable-expression field, so a
+local reference has no declaration to resolve and is reported as
+`RL_BIND_UNKNOWN_SYMBOL`. The binder does not invent local syntax; declaration
+and cycle behavior require a future approved source-contract amendment.
+
+Registry descriptors are a public data-only boundary: callers must provide
+inert, cloneable plain data with data properties only. Binding first applies
+the host runtime's `structuredClone` when available, which rejects ordinary
+Proxy descriptors without invoking their traps; it then inspects property
+descriptors and rejects accessors, unknown fields, non-plain objects, and
+invalid nested data. JavaScript has no universal, trap-free Proxy identity
+test for every engine or exotic object, so this is best-effort protection
+rather than an absolute proxy-safety guarantee. Do not pass untrusted live
+objects; construct descriptors from inert parsed data.
+
 Each `RuleLoomDiagnostic` is serializable and contains `code`,
 `severity: "error"`, `message`, and RFC 6901 `sourcePointer`. Diagnostics may
 also include `relatedLocations`. Codes and source pointers are compatibility
