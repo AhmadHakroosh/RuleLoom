@@ -356,8 +356,11 @@ const binaryOperators = new Set(["eq", "lt", "lte", "gt", "gte", "in"]);
 
 export function validateRuleSetDocument(
   value: unknown,
+  maxDiagnostics = Number.POSITIVE_INFINITY,
 ): RuleSetValidationResult {
-  const diagnostics: SchemaDiagnostic[] = [];
+  const diagnostics = Object.assign([] as SchemaDiagnostic[], {
+    maxDiagnostics,
+  });
   validateRuleSet(value, "", diagnostics);
 
   if (diagnostics.length > 0) {
@@ -378,6 +381,13 @@ function pushDiagnostic(
   expected: string,
   message: string,
 ) {
+  if (
+    diagnostics.length >=
+    (diagnostics as SchemaDiagnostic[] & { maxDiagnostics?: number })
+      .maxDiagnostics!
+  ) {
+    return;
+  }
   diagnostics.push({ code, path, expected, message });
 }
 

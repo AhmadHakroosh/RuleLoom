@@ -133,6 +133,33 @@ describe("RuleLoom document parsing", () => {
     );
   });
 
+  it("bounds wide unknown values and structural diagnostic collection", () => {
+    const wideValue = Object.fromEntries(
+      Array.from({ length: 10_000 }, (_, index) => [`field${index}`, true]),
+    );
+    const manyInvalidRules = Array.from({ length: 20 }, () => ({}));
+
+    expect(validateRuleSetDocumentInput(wideValue)).toMatchObject({
+      ok: false,
+      diagnostics: [{ code: "RL_PARSE_NESTING_TOO_DEEP" }],
+    });
+    const result = validateRuleSetDocumentInput(
+      {
+        schemaVersion: "1.0",
+        id: "example",
+        rules: manyInvalidRules,
+      },
+      { maxDiagnostics: 3 },
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.diagnostics).toHaveLength(3);
+      expect(result.diagnostics.at(-1)).toMatchObject({
+        code: "RL_PARSE_DIAGNOSTIC_LIMIT_REACHED",
+      });
+    }
+  });
+
   it("rejects lone UTF-16 surrogates from text and unknown input", () => {
     expect(
       parseRuleSetDocument(

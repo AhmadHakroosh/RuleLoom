@@ -53,7 +53,7 @@ const hardLimits = {
   maxNestingDepth: 256,
   maxDiagnostics: 1000,
 } as const;
-const maxVisitedNodes = 1_000_000;
+const maxVisitedNodes = 10_000;
 const schemaCodeRanks: Record<SchemaDiagnostic["code"], number> = {
   RL_SCHEMA_REQUIRED: 0,
   RL_SCHEMA_TYPE: 1,
@@ -76,6 +76,8 @@ interface CloneFrame {
   readonly sourcePointer: string;
   readonly depth: number;
   readonly assign: (value: unknown) => void;
+  readonly container?: JsonContainer;
+  readonly nextChildIndex?: number;
 }
 
 interface CloneResult {
@@ -135,7 +137,10 @@ function validateParsedValue(
     );
   }
 
-  const validation = validateRuleSetDocument(clonedValue);
+  const validation = validateRuleSetDocument(
+    clonedValue,
+    limits.maxDiagnostics + 1,
+  );
   if (!validation.valid) {
     return failure(normalizeSchemaDiagnostics(validation.diagnostics, limits));
   }
@@ -195,6 +200,20 @@ function cloneJsonValue(value: unknown, limits: ParserLimits): CloneResult {
 
   while (frames.length > 0) {
     const frame = frames.pop()!;
+    if (frame.container !== undefined && frame.nextChildIndex !== undefined) {
+      const child = cloneContainerChild(frame);
+      if (child !== undefined && "diagnostic" in child) {
+        return { diagnostic: child.diagnostic };
+      }
+      if (child !== undefined) {
+        frames.push({
+          ...frame,
+          nextChildIndex: frame.nextChildIndex + 1,
+        });
+        frames.push(child);
+      }
+      continue;
+    }
     const primitiveDiagnostic = clonePrimitive(
       frame.value,
       frame.sourcePointer,
@@ -245,21 +264,90 @@ function cloneJsonValue(value: unknown, limits: ParserLimits): CloneResult {
       return { diagnostic: container.diagnostic };
     }
     frame.assign(container.value);
-    const entries = container.entries;
-    for (let index = entries.length - 1; index >= 0; index -= 1) {
-      const entry = entries[index]!;
+    if (visitedNodes + container.keys.length > maxVisitedNodes) {
+      return {
+        diagnostic: diagnostic(
+          "RL_PARSE_NESTING_TOO_DEEP",
+          frame.sourcePointer,
+          "Document nesting exceeds the configured limit",
+        ),
+      };
+    }
+    if (container.keys.length === 0) {
+      continue;
+    }
+    const child = cloneContainerChild({
+      value: frame.value,
+      sourcePointer: frame.sourcePointer,
+      depth: frame.depth,
+      assign: frame.assign,
+      container,
+      nextChildIndex: 0,
+    });
+    if (child !== undefined && "diagnostic" in child) {
+      return { diagnostic: child.diagnostic };
+    }
+    if (child !== undefined) {
       frames.push({
-        value: entry.value,
-        sourcePointer: appendPointer(frame.sourcePointer, entry.key),
-        depth: frame.depth + 1,
-        assign: (clonedValue) => {
-          entry.assign(clonedValue);
-        },
+        value: frame.value,
+        sourcePointer: frame.sourcePointer,
+        depth: frame.depth,
+        assign: frame.assign,
+        container,
+        nextChildIndex: 1,
       });
+      frames.push(child);
     }
   }
 
   return { value: clonedRoot };
+}
+
+interface JsonContainer {
+  readonly value: object;
+  readonly keys: readonly string[];
+  readonly source: object;
+}
+
+function cloneContainerChild(
+  frame: CloneFrame,
+): CloneFrame | { readonly diagnostic: RuleLoomDiagnostic } | undefined {
+  if (frame.container === undefined || frame.nextChildIndex === undefined) {
+    return undefined;
+  }
+  const key = frame.container.keys[frame.nextChildIndex];
+  if (key === undefined) {
+    return undefined;
+  }
+  let descriptor: PropertyDescriptor | undefined;
+  try {
+    descriptor = Object.getOwnPropertyDescriptor(frame.container.source, key);
+  } catch {
+    return {
+      diagnostic: diagnostic(
+        "RL_SCHEMA_TYPE",
+        appendPointer(frame.sourcePointer, key),
+        "Value must be JSON data",
+      ),
+    };
+  }
+  if (descriptor === undefined || "get" in descriptor || "set" in descriptor) {
+    return {
+      diagnostic: diagnostic(
+        "RL_SCHEMA_TYPE",
+        appendPointer(frame.sourcePointer, key),
+        "Value must be JSON data",
+      ),
+    };
+  }
+  return {
+    value: descriptor.value,
+    sourcePointer: appendPointer(frame.sourcePointer, key),
+    depth: frame.depth + 1,
+    assign: (clonedValue) => {
+      (frame.container!.value as Record<string, unknown>)[key] = clonedValue;
+    },
+  };
 }
 
 function clonePrimitive(
@@ -299,16 +387,7 @@ function clonePrimitive(
 function createJsonContainer(
   value: object,
   sourcePointer: string,
-):
-  | {
-      readonly value: object;
-      readonly entries: readonly {
-        readonly key: string;
-        readonly value: unknown;
-        readonly assign: (value: unknown) => void;
-      }[];
-    }
-  | { readonly diagnostic: RuleLoomDiagnostic } {
+): JsonContainer | { readonly diagnostic: RuleLoomDiagnostic } {
   if (!Array.isArray(value)) {
     const prototype = Object.getPrototypeOf(value);
     if (prototype !== Object.prototype && prototype !== null) {
@@ -322,8 +401,7 @@ function createJsonContainer(
     }
   }
 
-  const descriptors = Object.getOwnPropertyDescriptors(value);
-  const keys = Reflect.ownKeys(descriptors);
+  const keys = Reflect.ownKeys(value);
   if (keys.some((key) => typeof key !== "string")) {
     return {
       diagnostic: diagnostic(
@@ -333,26 +411,27 @@ function createJsonContainer(
       ),
     };
   }
-  if (
-    keys.some((key) => {
-      const descriptor = descriptors[key as string]!;
-      return "get" in descriptor || "set" in descriptor;
-    })
-  ) {
-    return {
-      diagnostic: diagnostic(
-        "RL_SCHEMA_TYPE",
-        sourcePointer,
-        "Value must be JSON data",
-      ),
-    };
-  }
-
   const stringKeys = keys as string[];
   const isArray = Array.isArray(value);
   const dataKeys = isArray
     ? stringKeys.filter((key) => key !== "length")
     : stringKeys;
+  for (const key of dataKeys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (
+      descriptor === undefined ||
+      "get" in descriptor ||
+      "set" in descriptor
+    ) {
+      return {
+        diagnostic: diagnostic(
+          "RL_SCHEMA_TYPE",
+          sourcePointer,
+          "Value must be JSON data",
+        ),
+      };
+    }
+  }
   if (
     dataKeys.some((key) => hasLoneSurrogate(key)) ||
     (isArray &&
@@ -373,13 +452,8 @@ function createJsonContainer(
   const target: object = isArray ? [] : Object.create(null);
   return {
     value: target,
-    entries: dataKeys.map((key) => ({
-      key,
-      value: descriptors[key]!.value,
-      assign: (clonedValue) => {
-        (target as Record<string, unknown>)[key] = clonedValue;
-      },
-    })),
+    keys: dataKeys,
+    source: value,
   };
 }
 

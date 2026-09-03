@@ -34,7 +34,10 @@ export function isCompilerStructuralFixture(fixture: ConformanceFixture) {
   if (expectedDiagnostics.includes("RL_UNSAFE_PATH")) {
     return false;
   }
-  return expectedDiagnostics.every((code) => code === "RL_INVALID_SHAPE");
+  return (
+    expectedDiagnostics.length > 0 &&
+    expectedDiagnostics.every((code) => code === "RL_INVALID_SHAPE")
+  );
 }
 
 function projectFixture(fixture: ConformanceFixture) {

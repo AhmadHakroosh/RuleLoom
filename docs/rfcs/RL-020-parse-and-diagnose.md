@@ -67,3 +67,7 @@ Tests cover both APIs, every parser result and code, ordering, option boundaries
 ## Human approvals required
 
 This RFC is required before implementation because it defines public package APIs, public diagnostic contracts, and user-visible compiler parsing behavior. Ahmad Hakroosh, human owner, approved this RFC on September 03, 2026. The canonical approval evidence is retained outside the reviewed Git tree and binds this approval to the final RFC artifact digest.
+
+## Amendment: bounded schema diagnostics
+
+The public `@ruleloom/schema` function `validateRuleSetDocument` gains an optional diagnostic-cap argument. When omitted, it preserves the existing unbounded one-argument behavior and all RL-011 diagnostics. The compiler passes `maxDiagnostics + 1` so schema validation stops collecting further diagnostics before parser normalization reserves the final public slot for `RL_PARSE_DIAGNOSTIC_LIMIT_REACHED`. This additive parameter prevents wide invalid documents from allocating an unbounded diagnostic collection. Ahmad Hakroosh, human owner, approved this amendment on September 03, 2026; canonical evidence is retained outside the reviewed Git tree.
