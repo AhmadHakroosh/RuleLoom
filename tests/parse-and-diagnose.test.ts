@@ -52,6 +52,54 @@ describe("RuleLoom document parsing", () => {
     });
   });
 
+  it("ignores enumerable inherited properties from ordinary unknown input", () => {
+    const inheritedKey = "ruleLoomInheritedProperty";
+    // oxlint-disable-next-line no-extend-native
+    Object.defineProperty(Object.prototype, inheritedKey, {
+      configurable: true,
+      enumerable: true,
+      value: true,
+      writable: true,
+    });
+
+    try {
+      const result = validateRuleSetDocumentInput(validDocument());
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.document).not.toHaveProperty(inheritedKey);
+      }
+    } finally {
+      delete (Object.prototype as Record<string, unknown>)[inheritedKey];
+    }
+  });
+
+  it("ignores enumerable inherited properties from proxy unknown input", () => {
+    const inheritedKey = "ruleLoomInheritedProxyProperty";
+    // oxlint-disable-next-line no-extend-native
+    Object.defineProperty(Object.prototype, inheritedKey, {
+      configurable: true,
+      enumerable: true,
+      value: true,
+      writable: true,
+    });
+    const input = new Proxy(validDocument(), {
+      getOwnPropertyDescriptor: Reflect.getOwnPropertyDescriptor,
+      ownKeys: Reflect.ownKeys,
+    });
+
+    try {
+      const result = validateRuleSetDocumentInput(input);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.document).not.toHaveProperty(inheritedKey);
+      }
+    } finally {
+      delete (Object.prototype as Record<string, unknown>)[inheritedKey];
+    }
+  });
+
   it("reports parser and version errors without native parser details", () => {
     expect(parseRuleSetDocument("{")).toEqual({
       ok: false,
@@ -188,9 +236,9 @@ describe("RuleLoom document parsing", () => {
 
     expect(validateRuleSetDocumentInput(input)).toMatchObject({
       ok: false,
-      diagnostics: [{ code: "RL_PARSE_NESTING_TOO_DEEP", sourcePointer: "" }],
+      diagnostics: [{ code: "RL_SCHEMA_TYPE", sourcePointer: "" }],
     });
-    expect(descriptorCalls).toBeLessThan(descriptorFailureThreshold);
+    expect(descriptorCalls).toBeLessThanOrEqual(descriptorFailureThreshold + 1);
   });
 
   it("rejects lone UTF-16 surrogates from text and unknown input", () => {

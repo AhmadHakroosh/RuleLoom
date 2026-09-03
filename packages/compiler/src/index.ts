@@ -456,7 +456,10 @@ function createJsonContainer(
 
 function* enumerableOwnStringKeys(value: object): Generator<string> {
   for (const key in value) {
-    yield key;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor?.enumerable === true) {
+      yield key;
+    }
   }
 }
 
