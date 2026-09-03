@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compilerCoreDependency,
   compilerPackageName,
+  bindRuleSetDocument,
   compilerSchemaDependency,
   parseRuleSetDocument,
   validateRuleSetDocumentInput,
@@ -18,6 +19,7 @@ describe("public package entries", () => {
     expect(runtimePackageName).toBe("@ruleloom/runtime");
     expect(parseRuleSetDocument).toBeTypeOf("function");
     expect(validateRuleSetDocumentInput).toBeTypeOf("function");
+    expect(bindRuleSetDocument).toBeTypeOf("function");
   });
 
   it("preserves the approved package dependency direction", () => {

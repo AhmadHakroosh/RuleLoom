@@ -1,0 +1,38 @@
+{
+  "document": {
+    "schemaVersion": "1.0",
+    "id": "example",
+    "parameters": { "expected": 3 },
+    "rules": [
+      {
+        "id": "rule",
+        "when": { "eq": [{ "fact": "account" }, { "parameter": "expected" }] }
+      }
+    ]
+  },
+  "facts": [
+    {
+      "id": "account",
+      "version": "1",
+      "inputTypes": [],
+      "outputType": "number",
+      "arity": 0,
+      "pure": true,
+      "costClass": "io",
+      "async": false
+    }
+  ],
+  "operators": [
+    {
+      "id": "eq",
+      "version": "1",
+      "inputTypes": ["unknown", "unknown"],
+      "outputType": "boolean",
+      "arity": 2,
+      "pure": true,
+      "costClass": "constant",
+      "async": false
+    }
+  ],
+  "expected": "bound"
+}
