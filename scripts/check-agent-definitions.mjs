@@ -43,6 +43,16 @@ const prohibitedGrantPatterns = [
   /\b(?:may|can|allowed to|authorized to)\s+push\s+(?:to\s+)?protected\b/iu,
 ];
 const placeholderPatterns = [/\becho\s+ok\b/iu, /\btrue\b/iu, /\bexit\s+0\b/iu];
+const supportedTools = new Set([
+  "agent",
+  "browser",
+  "edit",
+  "execute",
+  "read",
+  "search",
+  "todo",
+  "web",
+]);
 const failures = [];
 
 function extractFrontmatter(content, filePath) {
@@ -65,6 +75,12 @@ function validateTools(filePath, metadata) {
   if (!Array.isArray(metadata.tools) || metadata.tools.length === 0) {
     failures.push(`${filePath}: tools must be a non-empty array`);
     return;
+  }
+
+  for (const tool of metadata.tools) {
+    if (typeof tool !== "string" || !supportedTools.has(tool)) {
+      failures.push(`${filePath}: unsupported tool: ${String(tool)}`);
+    }
   }
 
   if (readOnlyAgentPattern.test(filePath) && metadata.tools.includes("edit")) {

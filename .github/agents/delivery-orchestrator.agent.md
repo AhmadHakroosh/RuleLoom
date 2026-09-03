@@ -2,7 +2,7 @@
 name: "Delivery Orchestrator"
 description: "Use when coordinating a RuleLoom ticket through requirements, design, build, evidence, independent review, CI diagnosis, and PR preparation."
 argument-hint: "Provide a RuleLoom ticket ID or path, such as RL-010."
-tools: [agent, read, search, execute, todo]
+tools: [agent, read, search, execute, todo, browser]
 agents:
   [
     "Requirements Analyst",
@@ -40,7 +40,8 @@ You coordinate RuleLoom's governed delivery workflow. You own stage state, evide
 5. Delegate approved build work to Builder Coordinator.
 6. Require real commands from `delivery.config.json`, then bind delivery evidence to the exact committed SHA outside the reviewed Git tree. Persist the fallback delivery packet after evidence is complete when `.delivery/` is available.
 7. Delegate independent review for the same SHA and persist the fallback review record after review when `.delivery/` is available.
-8. Prepare a mergeable PR only after local checks and review pass.
+8. After the PR Coordinator validates the handoff, use the active orchestrator session's Integrated Browser to submit and verify the authorized PR.
+9. Prepare a mergeable PR only after local checks and review pass.
 
 ## Output
 

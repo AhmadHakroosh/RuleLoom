@@ -82,6 +82,19 @@ describe("agent definition validation", () => {
     expect(() => runAgentCheck([agentsDir])).toThrow();
   });
 
+  it("rejects unsupported tool names", async () => {
+    const agentsDir = await copyAgentFixture();
+    const agentPath = join(agentsDir, "pr-coordinator.agent.md");
+    const content = await readFile(agentPath, "utf8");
+
+    await writeFile(
+      agentPath,
+      content.replace("browser]", "browser, unknown-tool]"),
+    );
+
+    expect(() => runAgentCheck([agentsDir])).toThrow();
+  });
+
   it("rejects unknown subagent references", async () => {
     const agentsDir = await copyAgentFixture();
     const agentPath = join(agentsDir, "delivery-orchestrator.agent.md");
