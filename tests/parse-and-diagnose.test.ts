@@ -160,6 +160,39 @@ describe("RuleLoom document parsing", () => {
     }
   });
 
+  it("stops proxy property processing at the clone safety budget", () => {
+    const keyCount = 100_000;
+    const descriptorFailureThreshold = 25_000;
+    let descriptorCalls = 0;
+    const input = new Proxy(
+      {},
+      {
+        ownKeys() {
+          // Proxy [[OwnPropertyKeys]] requires this array; the clone must not retain it.
+          return Array.from(
+            { length: keyCount },
+            (_, index) => `field${index}`,
+          );
+        },
+        getOwnPropertyDescriptor(_target, key) {
+          descriptorCalls += 1;
+          if (descriptorCalls > descriptorFailureThreshold) {
+            throw new Error("descriptor processing exceeded the safety budget");
+          }
+          return typeof key === "string"
+            ? { configurable: true, enumerable: true, value: true }
+            : undefined;
+        },
+      },
+    );
+
+    expect(validateRuleSetDocumentInput(input)).toMatchObject({
+      ok: false,
+      diagnostics: [{ code: "RL_PARSE_NESTING_TOO_DEEP", sourcePointer: "" }],
+    });
+    expect(descriptorCalls).toBeLessThan(descriptorFailureThreshold);
+  });
+
   it("rejects lone UTF-16 surrogates from text and unknown input", () => {
     expect(
       parseRuleSetDocument(
