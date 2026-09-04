@@ -1,0 +1,618 @@
+{
+  "fixtureVersion": "1.0",
+  "description": "Positive and negative type-checker conformance fixtures for every built-in RuleLoom operator signature (RL-022).",
+  "fixtures": [
+    {
+      "id": "TYPE-ALL-POS-001",
+      "operator": "all",
+      "facts": [
+        {
+          "id": "flag",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "boolean",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "all",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": { "min": 0 },
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        },
+        {
+          "id": "eq",
+          "version": "1",
+          "inputTypes": ["unknown", "unknown"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "all": [{ "eq": [{ "fact": "flag" }, { "literal": true }] }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-ALL-NEG-001",
+      "operator": "all",
+      "facts": [],
+      "operators": [
+        {
+          "id": "all",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": { "min": 0 },
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "all": [{ "literal": "not-a-boolean" }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/all/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-ANY-POS-001",
+      "operator": "any",
+      "facts": [
+        {
+          "id": "flag",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "boolean",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "any",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": { "min": 0 },
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        },
+        {
+          "id": "eq",
+          "version": "1",
+          "inputTypes": ["unknown", "unknown"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "any": [{ "eq": [{ "fact": "flag" }, { "literal": true }] }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-ANY-NEG-001",
+      "operator": "any",
+      "facts": [
+        {
+          "id": "amountText",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "string",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "any",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": { "min": 0 },
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "any": [{ "fact": "amountText" }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/any/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-NOT-POS-001",
+      "operator": "not",
+      "facts": [
+        {
+          "id": "flag",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "boolean",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "not",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": 1,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "not": [{ "fact": "flag" }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-NOT-NEG-001",
+      "operator": "not",
+      "facts": [],
+      "operators": [
+        {
+          "id": "not",
+          "version": "1",
+          "inputTypes": ["boolean"],
+          "outputType": "boolean",
+          "arity": 1,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "not": [{ "literal": 5 }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/not/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-EQ-POS-001",
+      "operator": "eq",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "eq",
+          "version": "1",
+          "inputTypes": ["unknown", "unknown"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "eq": [{ "fact": "amount" }, { "literal": 10 }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-EQ-NEG-001",
+      "operator": "eq",
+      "facts": [
+        {
+          "id": "flag",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "boolean",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "eq",
+          "version": "1",
+          "inputTypes": ["unknown", "unknown"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": {
+        "eq": [{ "fact": "flag", "path": "/nested" }, { "literal": true }]
+      },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_UNSAFE_NARROWING",
+            "sourcePointer": "/rules/0/when/eq/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-LT-POS-001",
+      "operator": "lt",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "lt",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "lt": [{ "fact": "amount" }, { "literal": 5 }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-LT-NEG-001",
+      "operator": "lt",
+      "facts": [
+        {
+          "id": "amountText",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "string",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "lt",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "lt": [{ "fact": "amountText" }, { "literal": 5 }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/lt/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-LTE-POS-001",
+      "operator": "lte",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "lte",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "lte": [{ "fact": "amount" }, { "literal": 5 }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-LTE-NEG-001",
+      "operator": "lte",
+      "facts": [
+        {
+          "id": "amountText",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "string",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "lte",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "lte": [{ "fact": "amountText" }, { "literal": 5 }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/lte/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-GT-POS-001",
+      "operator": "gt",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "gt",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "gt": [{ "fact": "amount" }, { "literal": 5 }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-GT-NEG-001",
+      "operator": "gt",
+      "facts": [
+        {
+          "id": "amountText",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "string",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "gt",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "gt": [{ "fact": "amountText" }, { "literal": 5 }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/gt/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-GTE-POS-001",
+      "operator": "gte",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "gte",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "gte": [{ "fact": "amount" }, { "literal": 5 }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-GTE-NEG-001",
+      "operator": "gte",
+      "facts": [
+        {
+          "id": "amountText",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "string",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "gte",
+          "version": "1",
+          "inputTypes": ["number", "number"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "gte": [{ "fact": "amountText" }, { "literal": 5 }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/gte/0"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TYPE-IN-POS-001",
+      "operator": "in",
+      "facts": [
+        {
+          "id": "list",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "array",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "in",
+          "version": "1",
+          "inputTypes": ["unknown", "array"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "in": [{ "literal": 3 }, { "fact": "list" }] },
+      "expected": { "ok": true, "type": "boolean" }
+    },
+    {
+      "id": "TYPE-IN-NEG-001",
+      "operator": "in",
+      "facts": [
+        {
+          "id": "amount",
+          "version": "1",
+          "inputTypes": [],
+          "outputType": "number",
+          "arity": 0,
+          "pure": true,
+          "costClass": "io",
+          "async": false
+        }
+      ],
+      "operators": [
+        {
+          "id": "in",
+          "version": "1",
+          "inputTypes": ["unknown", "array"],
+          "outputType": "boolean",
+          "arity": 2,
+          "pure": true,
+          "costClass": "constant",
+          "async": false
+        }
+      ],
+      "when": { "in": [{ "literal": 3 }, { "fact": "amount" }] },
+      "expected": {
+        "ok": false,
+        "diagnostics": [
+          {
+            "code": "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+            "sourcePointer": "/rules/0/when/in/1"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -27,7 +27,13 @@ export type RuleLoomDiagnosticCode =
   | "RL_BIND_UNSUPPORTED_VERSION"
   | "RL_BIND_ARITY"
   | "RL_BIND_CYCLE"
-  | "RL_BIND_INVALID_DESCRIPTOR";
+  | "RL_BIND_INVALID_DESCRIPTOR"
+  | "RL_TYPE_ARITY_MISMATCH"
+  | "RL_TYPE_INCOMPATIBLE_ARGUMENT"
+  | "RL_TYPE_AMBIGUOUS_OVERLOAD"
+  | "RL_TYPE_NO_MATCHING_OVERLOAD"
+  | "RL_TYPE_UNSAFE_NARROWING"
+  | "RL_TYPE_INVALID_RESULT_CONTEXT";
 
 export interface RelatedLocation {
   readonly sourcePointer: string;
@@ -738,6 +744,631 @@ function deepFreeze<T>(value: T): T {
     Object.freeze(value);
   }
   return value;
+}
+
+// ---------------------------------------------------------------------------
+// Static expression type checker (RL-022)
+// ---------------------------------------------------------------------------
+
+export type TypeRef =
+  | "null"
+  | "boolean"
+  | "number"
+  | "string"
+  | { readonly kind: "array"; readonly element: TypeRef }
+  | { readonly kind: "object" }
+  | { readonly kind: "union"; readonly members: readonly TypeRef[] }
+  | "missing"
+  | "unknown"
+  | "error";
+
+export type TypedExpression =
+  | { readonly literal: JsonValue; readonly type: TypeRef }
+  | {
+      readonly reference: BoundSymbol;
+      readonly path?: string;
+      readonly type: TypeRef;
+    }
+  | {
+      readonly operator: BoundSymbol;
+      readonly args: readonly TypedExpression[];
+      readonly type: TypeRef;
+      readonly operatorId: string;
+      readonly operatorVersion: string;
+    };
+
+export type TypedRule = Omit<BoundRule, "when"> & {
+  readonly when: TypedExpression;
+};
+
+export type TypedRuleSetDocument = Omit<BoundRuleSetDocument, "rules"> & {
+  readonly rules: readonly TypedRule[];
+};
+
+export interface TypeCheckOptions {
+  readonly operators?: readonly RegistryDescriptor[];
+  readonly maxNestingDepth?: number;
+}
+
+export type TypeCheckResult =
+  | { readonly ok: true; readonly document: TypedRuleSetDocument }
+  | { readonly ok: false; readonly diagnostics: readonly RuleLoomDiagnostic[] };
+
+/**
+ * Runs after {@link bindRuleSetDocument} succeeds. Infers types for literal,
+ * parameter, fact, and operator-result expressions, resolves operator
+ * overloads deterministically, and validates boolean/action-payload/
+ * parameter-default contexts without mutating the bound document.
+ */
+export function typeCheckRuleSetDocument(
+  document: BoundRuleSetDocument,
+  options?: TypeCheckOptions,
+): TypeCheckResult {
+  const maxDepth = resolveTypeNestingDepth(options?.maxNestingDepth);
+  const diagnostics: RuleLoomDiagnostic[] = [];
+  const parameterTypes = new Map<string, TypeRef>();
+  for (const [name, value] of Object.entries(document.parameters ?? {})) {
+    parameterTypes.set(
+      name,
+      inferLiteralType(
+        value,
+        `/parameters/${escapePointerSegment(name)}`,
+        0,
+        maxDepth,
+        diagnostics,
+      ),
+    );
+  }
+
+  const context: TypeInferenceContext = {
+    parameterTypes,
+    operators: options?.operators,
+    maxDepth,
+    diagnostics,
+  };
+
+  const typedRules: TypedRule[] = document.rules.map((rule, ruleIndex) => {
+    const pointer = `/rules/${ruleIndex}/when`;
+    const when = inferExpressionType(rule.when, pointer, 0, context);
+    if (!isBooleanContextCompatible(when.type)) {
+      diagnostics.push(
+        typeDiagnostic(
+          "RL_TYPE_INVALID_RESULT_CONTEXT",
+          pointer,
+          `Rule condition must be boolean-compatible, found '${describeTypeRef(when.type)}'`,
+        ),
+      );
+    }
+    for (
+      let actionIndex = 0;
+      actionIndex < (rule.actions?.length ?? 0);
+      actionIndex += 1
+    ) {
+      const action = rule.actions![actionIndex]!;
+      if (action.payload !== undefined) {
+        inferLiteralType(
+          action.payload,
+          `/rules/${ruleIndex}/actions/${actionIndex}/payload`,
+          0,
+          maxDepth,
+          diagnostics,
+        );
+      }
+    }
+    return { ...rule, when };
+  });
+
+  if (diagnostics.length > 0) {
+    return { ok: false, diagnostics: sortTypeDiagnostics(diagnostics) };
+  }
+  return {
+    ok: true,
+    document: deepFreeze({ ...document, rules: typedRules }),
+  };
+}
+
+interface TypeInferenceContext {
+  readonly parameterTypes: ReadonlyMap<string, TypeRef>;
+  readonly operators: readonly RegistryDescriptor[] | undefined;
+  readonly maxDepth: number;
+  readonly diagnostics: RuleLoomDiagnostic[];
+}
+
+function inferExpressionType(
+  expression: BoundExpression,
+  sourcePointer: string,
+  depth: number,
+  context: TypeInferenceContext,
+): TypedExpression {
+  if (depth > context.maxDepth) {
+    context.diagnostics.push(
+      typeDiagnostic(
+        "RL_PARSE_NESTING_TOO_DEEP",
+        sourcePointer,
+        "Expression nesting exceeds the configured limit",
+      ),
+    );
+    return { literal: null, type: "error" };
+  }
+  if ("literal" in expression) {
+    return {
+      literal: expression.literal,
+      type: inferLiteralType(
+        expression.literal,
+        sourcePointer,
+        depth + 1,
+        context.maxDepth,
+        context.diagnostics,
+      ),
+    };
+  }
+  if ("reference" in expression) {
+    const symbol = expression.reference;
+    const baseType =
+      symbol.kind === "parameter"
+        ? (context.parameterTypes.get(symbol.name) ?? "unknown")
+        : unionOf(
+            parseDescriptorTypeRef(symbol.descriptor?.outputType ?? "unknown"),
+            "missing",
+          );
+    const type = resolvePathedType(
+      baseType,
+      expression.path,
+      sourcePointer,
+      context.diagnostics,
+    );
+    return {
+      reference: symbol,
+      ...(expression.path === undefined ? {} : { path: expression.path }),
+      type,
+    };
+  }
+  const symbol = expression.operator;
+  const args = expression.args.map((arg, index) =>
+    inferExpressionType(
+      arg,
+      `${sourcePointer}/${escapePointerSegment(symbol.name)}/${index}`,
+      depth + 1,
+      context,
+    ),
+  );
+  if (symbol.descriptor === undefined) {
+    return {
+      operator: symbol,
+      args,
+      type: "error",
+      operatorId: symbol.name,
+      operatorVersion: symbol.version ?? "",
+    };
+  }
+  const resolved = resolveOperatorCall(
+    symbol.descriptor,
+    args.map((arg) => arg.type),
+    args.map(
+      (_, index) =>
+        `${sourcePointer}/${escapePointerSegment(symbol.name)}/${index}`,
+    ),
+    sourcePointer,
+    context.operators,
+    context.diagnostics,
+  );
+  return {
+    operator: symbol,
+    args,
+    type: resolved.type,
+    operatorId: resolved.operatorId,
+    operatorVersion: resolved.operatorVersion,
+  };
+}
+
+function resolvePathedType(
+  baseType: TypeRef,
+  path: string | undefined,
+  sourcePointer: string,
+  diagnostics: RuleLoomDiagnostic[],
+): TypeRef {
+  if (path === undefined) return baseType;
+  const members = isUnionType(baseType) ? baseType.members : [baseType];
+  const allowsTraversal = members.some(
+    (member) =>
+      member === "unknown" ||
+      member === "error" ||
+      isArrayType(member) ||
+      isObjectType(member),
+  );
+  if (!allowsTraversal) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_TYPE_UNSAFE_NARROWING",
+        sourcePointer,
+        `Path access is not valid on type '${describeTypeRef(baseType)}'`,
+      ),
+    );
+    return "error";
+  }
+  return unionOf("unknown", "missing");
+}
+
+function inferLiteralType(
+  value: JsonValue,
+  sourcePointer: string,
+  depth: number,
+  maxDepth: number,
+  diagnostics: RuleLoomDiagnostic[],
+): TypeRef {
+  if (depth > maxDepth) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_PARSE_NESTING_TOO_DEEP",
+        sourcePointer,
+        "Literal nesting exceeds the configured limit",
+      ),
+    );
+    return "error";
+  }
+  if (value === null) return "null";
+  if (typeof value === "boolean") return "boolean";
+  if (typeof value === "number") return "number";
+  if (typeof value === "string") return "string";
+  if (Array.isArray(value)) {
+    const elementType: TypeRef =
+      value.length === 0
+        ? "unknown"
+        : unionOf(
+            ...value.map((element, index) =>
+              inferLiteralType(
+                element,
+                `${sourcePointer}/${index}`,
+                depth + 1,
+                maxDepth,
+                diagnostics,
+              ),
+            ),
+          );
+    return { kind: "array", element: elementType };
+  }
+  return { kind: "object" };
+}
+
+function resolveOperatorCall(
+  boundDescriptor: RegistryDescriptor,
+  argTypes: readonly TypeRef[],
+  argPointers: readonly string[],
+  sourcePointer: string,
+  registryOperators: readonly RegistryDescriptor[] | undefined,
+  diagnostics: RuleLoomDiagnostic[],
+): {
+  readonly type: TypeRef;
+  readonly operatorId: string;
+  readonly operatorVersion: string;
+} {
+  if (!arityMatches(boundDescriptor.arity, argTypes.length)) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_TYPE_ARITY_MISMATCH",
+        sourcePointer,
+        `Operator '${boundDescriptor.id}' received ${argTypes.length} argument(s)`,
+      ),
+    );
+    return operatorErrorResult(boundDescriptor);
+  }
+
+  const mismatchIndex = argTypes.findIndex(
+    (argType, index) =>
+      !isArgumentAccepted(argType, declaredInputType(boundDescriptor, index)),
+  );
+  if (mismatchIndex !== -1) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_TYPE_INCOMPATIBLE_ARGUMENT",
+        argPointers[mismatchIndex] ?? sourcePointer,
+        `Operator '${boundDescriptor.id}' argument ${mismatchIndex} expects '${describeTypeRef(
+          declaredInputType(boundDescriptor, mismatchIndex),
+        )}', received '${describeTypeRef(argTypes[mismatchIndex]!)}'`,
+      ),
+    );
+    return operatorErrorResult(boundDescriptor);
+  }
+
+  if (registryOperators === undefined) {
+    return {
+      type: parseDescriptorTypeRef(boundDescriptor.outputType),
+      operatorId: boundDescriptor.id,
+      operatorVersion: boundDescriptor.version,
+    };
+  }
+
+  const sameName = registryOperators.filter(
+    (candidate) =>
+      candidate.id === boundDescriptor.id &&
+      arityMatches(candidate.arity, argTypes.length),
+  );
+  const accepting = sameName.filter((candidate) =>
+    argTypes.every((argType, index) =>
+      isArgumentAccepted(argType, declaredInputType(candidate, index)),
+    ),
+  );
+  if (accepting.length === 0) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_TYPE_NO_MATCHING_OVERLOAD",
+        sourcePointer,
+        `No registered '${boundDescriptor.id}' signature accepts the supplied argument types`,
+      ),
+    );
+    return operatorErrorResult(boundDescriptor);
+  }
+
+  const maximal = mostSpecificDescriptors(accepting);
+  const sorted = maximal.toSorted(
+    (left, right) =>
+      compareStrings(left.id, right.id) ||
+      compareStrings(left.version, right.version),
+  );
+  if (sorted.length > 1) {
+    diagnostics.push(
+      typeDiagnostic(
+        "RL_TYPE_AMBIGUOUS_OVERLOAD",
+        sourcePointer,
+        `Multiple '${boundDescriptor.id}' signatures equally match the supplied argument types`,
+      ),
+    );
+    return operatorErrorResult(boundDescriptor);
+  }
+
+  const resolved = sorted[0]!;
+  return {
+    type: parseDescriptorTypeRef(resolved.outputType),
+    operatorId: resolved.id,
+    operatorVersion: resolved.version,
+  };
+}
+
+function operatorErrorResult(descriptor: RegistryDescriptor) {
+  return {
+    type: "error" as const,
+    operatorId: descriptor.id,
+    operatorVersion: descriptor.version,
+  };
+}
+
+function declaredInputType(
+  descriptor: RegistryDescriptor,
+  index: number,
+): TypeRef {
+  if (descriptor.inputTypes.length === 0) return "unknown";
+  const position = Math.min(index, descriptor.inputTypes.length - 1);
+  return parseDescriptorTypeRef(descriptor.inputTypes[position]!);
+}
+
+function mostSpecificDescriptors(
+  candidates: readonly RegistryDescriptor[],
+): readonly RegistryDescriptor[] {
+  return candidates.filter(
+    (candidate) =>
+      !candidates.some(
+        (other) => other !== candidate && dominatesDescriptor(other, candidate),
+      ),
+  );
+}
+
+function dominatesDescriptor(
+  a: RegistryDescriptor,
+  b: RegistryDescriptor,
+): boolean {
+  return isAtLeastAsSpecific(a, b) && !isAtLeastAsSpecific(b, a);
+}
+
+function isAtLeastAsSpecific(
+  a: RegistryDescriptor,
+  b: RegistryDescriptor,
+): boolean {
+  const length = Math.max(a.inputTypes.length, b.inputTypes.length, 1);
+  for (let index = 0; index < length; index += 1) {
+    if (
+      !isDeclaredSubsetOrEqual(
+        declaredInputType(a, index),
+        declaredInputType(b, index),
+      )
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function resolveTypeNestingDepth(value: number | undefined): number {
+  const fallback = 64;
+  const hardLimit = 256;
+  if (value === undefined) return fallback;
+  if (
+    !Number.isFinite(value) ||
+    !Number.isInteger(value) ||
+    value <= 0 ||
+    value > hardLimit
+  ) {
+    throw new RangeError(
+      "maxNestingDepth must be a positive integer within its hard limit",
+    );
+  }
+  return value;
+}
+
+function sortTypeDiagnostics(
+  diagnostics: readonly RuleLoomDiagnostic[],
+): readonly RuleLoomDiagnostic[] {
+  return diagnostics.toSorted(
+    (left, right) =>
+      compareStrings(left.sourcePointer, right.sourcePointer) ||
+      compareNumbers(
+        typeCodeRanks[left.code] ?? 99,
+        typeCodeRanks[right.code] ?? 99,
+      ) ||
+      compareStrings(left.message, right.message),
+  );
+}
+
+const typeCodeRanks: Record<string, number> = {
+  RL_TYPE_ARITY_MISMATCH: 0,
+  RL_TYPE_INCOMPATIBLE_ARGUMENT: 1,
+  RL_TYPE_AMBIGUOUS_OVERLOAD: 2,
+  RL_TYPE_NO_MATCHING_OVERLOAD: 3,
+  RL_TYPE_UNSAFE_NARROWING: 4,
+  RL_TYPE_INVALID_RESULT_CONTEXT: 5,
+  RL_PARSE_NESTING_TOO_DEEP: 6,
+};
+
+function typeDiagnostic(
+  code: RuleLoomDiagnosticCode,
+  sourcePointer: string,
+  message: string,
+): RuleLoomDiagnostic {
+  return {
+    code,
+    severity: "error",
+    message,
+    sourcePointer: sourcePointer || "/",
+  };
+}
+
+// --- Type lattice ------------------------------------------------------
+
+function isUnionType(
+  type: TypeRef,
+): type is { readonly kind: "union"; readonly members: readonly TypeRef[] } {
+  return typeof type === "object" && type !== null && type.kind === "union";
+}
+
+function isArrayType(
+  type: TypeRef,
+): type is { readonly kind: "array"; readonly element: TypeRef } {
+  return typeof type === "object" && type !== null && type.kind === "array";
+}
+
+function isObjectType(type: TypeRef): type is { readonly kind: "object" } {
+  return typeof type === "object" && type !== null && type.kind === "object";
+}
+
+function typeRefKey(type: TypeRef): string {
+  if (typeof type === "string") return type;
+  if (type.kind === "array") return `array<${typeRefKey(type.element)}>`;
+  if (type.kind === "object") return "object";
+  return `union<${type.members.map(typeRefKey).toSorted(compareStrings).join(",")}>`;
+}
+
+function describeTypeRef(type: TypeRef): string {
+  if (typeof type === "string") return type;
+  if (type.kind === "array") return `array<${describeTypeRef(type.element)}>`;
+  if (type.kind === "object") return "object";
+  return type.members.map(describeTypeRef).join(" | ");
+}
+
+function unionOf(...types: readonly TypeRef[]): TypeRef {
+  const flattened: TypeRef[] = [];
+  const flattenInto = (type: TypeRef) => {
+    if (isUnionType(type)) {
+      for (const member of type.members) flattenInto(member);
+    } else {
+      flattened.push(type);
+    }
+  };
+  for (const type of types) flattenInto(type);
+  if (flattened.length === 0) return "unknown";
+  if (flattened.some((type) => type === "error")) return "error";
+  const byKey = new Map<string, TypeRef>();
+  for (const type of flattened) {
+    const key = typeRefKey(type);
+    if (!byKey.has(key)) byKey.set(key, type);
+  }
+  const deduped = [...byKey.values()];
+  if (deduped.length === 1) return deduped[0]!;
+  return {
+    kind: "union",
+    members: deduped.toSorted((left, right) =>
+      compareStrings(typeRefKey(left), typeRefKey(right)),
+    ),
+  };
+}
+
+// Permissive check: does an inferred argument type satisfy a declared
+// (descriptor) type? `unknown`, `missing`, and `error` members are always
+// accepted so nullable/missing/unknown values are never rejected outright.
+function isArgumentAccepted(argType: TypeRef, declaredType: TypeRef): boolean {
+  if (declaredType === "unknown" || declaredType === "error") return true;
+  if (argType === "unknown" || argType === "error" || argType === "missing")
+    return true;
+  const members = isUnionType(argType) ? argType.members : [argType];
+  return members.every((member) => {
+    if (member === "unknown" || member === "error" || member === "missing")
+      return true;
+    return isMemberAccepted(member, declaredType);
+  });
+}
+
+function isMemberAccepted(member: TypeRef, declaredType: TypeRef): boolean {
+  if (declaredType === "unknown" || declaredType === "error") return true;
+  if (isUnionType(declaredType)) {
+    return declaredType.members.some((candidate) =>
+      isMemberAccepted(member, candidate),
+    );
+  }
+  if (isArrayType(member)) return isArrayType(declaredType);
+  if (isObjectType(member)) return isObjectType(declaredType);
+  return typeRefKey(member) === typeRefKey(declaredType);
+}
+
+// Asymmetric declared-vs-declared subset relation used only to rank operator
+// overload specificity (unlike isArgumentAccepted, `unknown` only absorbs on
+// the right-hand side, so a narrower declared type is preferred deterministically).
+function isDeclaredSubsetOrEqual(a: TypeRef, b: TypeRef): boolean {
+  if (b === "unknown") return true;
+  if (typeRefKey(a) === typeRefKey(b)) return true;
+  if (a === "unknown") return false;
+  if (isUnionType(b)) {
+    const aMembers = isUnionType(a) ? a.members : [a];
+    return aMembers.every((member) =>
+      b.members.some((candidate) => isDeclaredSubsetOrEqual(member, candidate)),
+    );
+  }
+  if (isUnionType(a)) return false;
+  if (isArrayType(a) && isArrayType(b))
+    return isDeclaredSubsetOrEqual(a.element, b.element);
+  return false;
+}
+
+function isBooleanContextCompatible(type: TypeRef): boolean {
+  if (type === "error") return true;
+  const members = isUnionType(type) ? type.members : [type];
+  return members.every(
+    (member) =>
+      member === "boolean" ||
+      member === "missing" ||
+      member === "unknown" ||
+      member === "error",
+  );
+}
+
+const descriptorTypeKeywords: Record<string, TypeRef> = {
+  null: "null",
+  boolean: "boolean",
+  number: "number",
+  string: "string",
+  array: { kind: "array", element: "unknown" },
+  object: { kind: "object" },
+  missing: "missing",
+  unknown: "unknown",
+  error: "error",
+};
+
+function parseDescriptorTypeRef(raw: string): TypeRef {
+  const segments = raw
+    .split("|")
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0);
+  if (segments.length === 0) return "unknown";
+  return unionOf(
+    ...segments.map((segment) => descriptorTypeKeywords[segment] ?? "unknown"),
+  );
 }
 
 const defaultLimits = {
